@@ -1,0 +1,66 @@
+import type { Categoria, Fonte, Frequencia, Normalizacao, Serie, Unidade } from "@/lib/api/types";
+
+/**
+ * O contrato que todo indicador cumpre.
+ *
+ * Um indicador sabe três coisas: o que o número SIGNIFICA (unidade, direção,
+ * descrição), de ONDE ele vem (fonte, código, URL de conferência) e COMO buscá-lo.
+ * Nada mais. A UI não conhece API nenhuma — só este contrato.
+ */
+
+export interface OpcoesBusca {
+  /** Sigla da UF ("SP"). Ausente = Brasil. */
+  uf?: string;
+  signal?: AbortSignal;
+}
+
+export interface Indicador {
+  /** Identificador estável, usado na URL: "ipca", "desocupacao". */
+  id: string;
+  /** Nome completo, para a ficha do indicador. */
+  nome: string;
+  /** Nome curto, para a régua e as listas. */
+  curto: string;
+  categoria: Categoria;
+  /** O que o número quer dizer, em uma frase. */
+  descricao: string;
+  unidade: Unidade;
+  frequencia: Frequencia;
+  /** Primeiro ano com dado publicado. */
+  desde: number;
+  /**
+   * Leitura do indicador: subir é bom, ruim, ou não há juízo? `null` evita
+   * pintar de "melhora" o que é apenas variação — a maioria dos indicadores
+   * econômicos não tem valência.
+   */
+  direcao: "alto-melhor" | "baixo-melhor" | null;
+  fonte: Fonte;
+  /** Código de origem legível: "SIDRA t.1737, v.63". */
+  codigo: string;
+  /** Página humana onde o dado pode ser conferido. */
+  consulta: string;
+  /** Normalizações que fazem sentido para este indicador. */
+  normalizacoes: Normalizacao[];
+  /** Aceita recorte por UF (alimenta o mapa). */
+  porUf?: boolean;
+  buscar: (opcoes: OpcoesBusca) => Promise<Serie>;
+}
+
+/** Preenche os campos de procedência para não repeti-los em cada indicador. */
+export function montarSerie(
+  indicador: Pick<Indicador, "id" | "fonte" | "unidade" | "frequencia" | "codigo">,
+  pontos: Serie["pontos"],
+  url: string,
+  extras: { revisavel?: boolean } = {},
+): Serie {
+  return {
+    indicadorId: indicador.id,
+    pontos,
+    frequencia: indicador.frequencia,
+    unidade: indicador.unidade,
+    fonte: indicador.fonte,
+    url,
+    codigo: indicador.codigo,
+    ...extras,
+  };
+}
