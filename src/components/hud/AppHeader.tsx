@@ -1,4 +1,5 @@
 import { Moon, Sun } from "lucide-react";
+import { LinkCodigo } from "@/components/hud/LinkCodigo";
 import type { Tema } from "@/hooks/useTema";
 import { cn } from "@/lib/utils";
 
@@ -43,15 +44,16 @@ export function AppHeader({ tema, aoAlternarTema, navegacao }: AppHeaderProps) {
           {/* Navegação em linha, só a partir do breakpoint médio. */}
           <div className="ml-auto hidden items-center gap-2 md:flex">
             {navegacao}
+            <span aria-hidden="true" className="bg-border mx-1 h-4 w-px" />
+            <LinkCodigo />
             <BotaoTema tema={tema} aoAlternar={aoAlternarTema} />
           </div>
 
-          {/* No mobile, só o botão de tema fica na primeira faixa. */}
-          <BotaoTema
-            tema={tema}
-            aoAlternar={aoAlternarTema}
-            className="ml-auto md:hidden"
-          />
+          {/* No mobile, o wordmark divide a primeira faixa com a atribuição. */}
+          <div className="ml-auto flex items-center md:hidden">
+            <LinkCodigo />
+            <BotaoTema tema={tema} aoAlternar={aoAlternarTema} />
+          </div>
         </div>
 
         {navegacao && <div className="pb-2 md:hidden">{navegacao}</div>}
