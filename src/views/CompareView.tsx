@@ -7,7 +7,7 @@ import { Segmentado } from "@/components/hud/Segmentado";
 import { useHashRoute } from "@/hooks/useHashRoute";
 import { useApoio, useSerie } from "@/hooks/useSerie";
 import { NORMALIZACOES, type Normalizacao } from "@/lib/api/types";
-import { formatarDuracao, formatarValor } from "@/lib/format";
+import { formatarDuracao, formatarEixo, formatarValor } from "@/lib/format";
 import { GOVERNOS, mesesDeMandato, type Governo } from "@/lib/governos";
 import { INDICADORES, indicadorPorId } from "@/lib/indicadores";
 import { alinharPorMandato, normalizar, paraMensal, resumir, type ModoNormalizacao } from "@/lib/serie";
@@ -41,8 +41,11 @@ export function CompareView() {
   const governoA = GOVERNOS.find((g) => g.id === idA);
   const governoB = GOVERNOS.find((g) => g.id === idB);
 
-  const normalizacaoPadrao: ModoNormalizacao =
-    escolhido && escolhido.normalizacoes.includes("base100") ? "base100" : "absoluto";
+  // Sobrepor dois governos só é honesto na mesma unidade. `base100` é a opção
+  // mais justa quando a série é acumulativa, mas não é um padrão seguro — uma
+  // taxa que cruza o zero não pode ser indexada. Então o padrão é o valor como
+  // publicado, e a normalização é escolha explícita de quem está lendo.
+  const normalizacaoPadrao: ModoNormalizacao = "absoluto";
   const modoBruto = (rota.params.get("n") as ModoNormalizacao | null) ?? normalizacaoPadrao;
   const modo = escolhido?.normalizacoes.includes(modoBruto as Normalizacao)
     ? modoBruto
@@ -196,7 +199,7 @@ export function CompareView() {
             xDataKey="mes"
             series={series}
             formatoX={rotuloDoMes}
-            formatoY={(valor) => formatarValor(valor, unidadeEfetiva).numero}
+            formatoY={(valor) => formatarEixo(valor, unidadeEfetiva.casas)}
             carregando={isPending}
           />
         )}

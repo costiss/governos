@@ -131,11 +131,19 @@ export type ModoNormalizacao = "absoluto" | "base100" | "perCapita" | "pib";
  *
  * Serve para comparar RITMOS, não tamanhos: dois governos com inflações de
  * patamares distintos começam ambos em 100, e a inclinação revela qual
- * acumulou mais rápido. Não faz sentido para séries que já são percentuais.
+ * acumulou mais rápido.
+ *
+ * O índice só existe sobre escala de razão positiva. Uma série que cruza o
+ * zero — uma taxa de juros, a variação mensal de preços, um saldo — não pode
+ * ser indexada: dividir por um valor negativo troca o sinal, e por um valor
+ * quase nulo explode a escala. Nesses casos a série volta intacta, e é
+ * responsabilidade do indicador não oferecer `base100`.
  */
 export function base100(pontos: Ponto[]): Ponto[] {
-  const referencia = pontos.find((p) => Number.isFinite(p.valor) && p.valor !== 0);
-  if (!referencia) return pontos;
+  const referencia = pontos.find((p) => Number.isFinite(p.valor));
+  const indexavel =
+    referencia != null && referencia.valor > 0 && pontos.every((p) => p.valor > 0);
+  if (!indexavel) return pontos;
   return pontos.map((ponto) => ({
     data: ponto.data,
     valor: (ponto.valor / referencia.valor) * 100,

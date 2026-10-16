@@ -46,6 +46,19 @@ export function formatarInteiro(valor: number | null | undefined): string {
   return valor == null || !Number.isFinite(valor) ? "—" : inteiro.format(valor);
 }
 
+/**
+ * Rótulo de eixo: casas decimais proporcionais à magnitude.
+ * "100,00" num eixo é ruído; "100" é o que a escala quer dizer.
+ */
+export function formatarEixo(valor: number, maximo = 2): string {
+  const absoluto = Math.abs(valor);
+  const casas = Math.min(maximo, absoluto >= 100 ? 0 : absoluto >= 10 ? 1 : 2);
+  return valor.toLocaleString("pt-BR", {
+    minimumFractionDigits: casas,
+    maximumFractionDigits: casas,
+  });
+}
+
 /** "2024-03-01" → "mar/2024" */
 export function formatarMes(iso: string): string {
   const [ano, mes] = iso.split("-");

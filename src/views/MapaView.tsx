@@ -80,24 +80,49 @@ export function MapaView() {
     );
   }, [valores, unidade]);
 
+  /**
+   * Ordem de leitura: sempre do maior valor para o menor.
+   *
+   * Na prática isso põe o PIOR primeiro quando o indicador é "menor é melhor"
+   * (homicídio, Gini) e o MELHOR primeiro quando é "maior é melhor" (renda,
+   * escolarização). O critério nunca inverte por causa da valência — só o
+   * rótulo muda, para dizer a verdade sobre o que está no topo.
+   */
   const ranking = useMemo(() => {
     return Object.entries(valores)
       .filter(([, item]) => item.valor != null)
       .map(([sigla, item]) => ({ sigla, valor: item.valor as number }))
-      .sort((a, b) => {
-        // Ranking pela direção do indicador: o que importa primeiro no topo.
-        const ruim = escolhido?.direcao === "baixo-melhor" ? -1 : 1;
-        return (b.valor - a.valor) * ruim;
-      });
-  }, [valores, escolhido]);
+      .sort((a, b) => b.valor - a.valor);
+  }, [valores]);
+
+  const rotuloRanking =
+    escolhido?.direcao === "baixo-melhor"
+      ? "Pior → melhor"
+      : escolhido?.direcao === "alto-melhor"
+        ? "Melhor → pior"
+        : "Maior → menor";
 
   const extremos = useMemo(() => {
     if (!unidade || ranking.length === 0) return null;
+    const valoresOrdenados = [...ranking].sort((a, b) => a.valor - b.valor);
     return {
-      minimo: formatarValor(ranking[ranking.length - 1].valor, unidade).numero,
-      maximo: formatarValor(ranking[0].valor, unidade).numero,
+      minimo: formatarValor(valoresOrdenados[0].valor, unidade).numero,
+      maximo: formatarValor(valoresOrdenados[valoresOrdenados.length - 1].valor, unidade).numero,
     };
   }, [ranking, unidade]);
+
+  /** Cobertura real do recorte estadual, para a ficha de procedência. */
+  const cobertura = useMemo(() => {
+    const pontos = Object.values(porUf).flat();
+    if (pontos.length === 0) return null;
+    let de = pontos[0].data;
+    let ate = pontos[0].data;
+    for (const ponto of pontos) {
+      if (ponto.data < de) de = ponto.data;
+      if (ponto.data > ate) ate = ponto.data;
+    }
+    return { de, ate, n: pontos.length };
+  }, [porUf]);
 
   if (!escolhido) {
     return (
@@ -187,9 +212,7 @@ export function MapaView() {
         </div>
 
         <aside className="min-w-0">
-          <p className="rotulo border-border mb-2 border-b pb-1.5">
-            {escolhido.direcao === "baixo-melhor" ? "Pior → melhor" : "Maior → menor"}
-          </p>
+          <p className="rotulo border-border mb-2 border-b pb-1.5">{rotuloRanking}</p>
           <ol className="quiet-scroll max-h-[420px] overflow-y-auto sm:max-h-[520px]">
             {ranking.map((item, indice) => {
               const ativo = ufAtiva === item.sigla;
@@ -234,7 +257,7 @@ export function MapaView() {
       </div>
 
       <div className="border-border border-t pt-4">
-        <FichaIndicador indicador={escolhido} recorte="Unidades da federação" />
+        <FichaIndicador indicador={escolhido} recorte="Unidades da federação" cobertura={cobertura} />
       </div>
     </div>
   );

@@ -16,12 +16,20 @@ interface FichaIndicadorProps {
   serie?: Serie;
   /** Texto do recorte em vigor (ex.: "Brasil" ou "São Paulo"). */
   recorte?: string;
+  /** Cobertura explicitada quando não há uma `Serie` única (ex.: o mapa). */
+  cobertura?: { de: string; ate: string; n: number } | null;
 }
 
-export function FichaIndicador({ indicador, serie, recorte }: FichaIndicadorProps) {
+export function FichaIndicador({ indicador, serie, recorte, cobertura }: FichaIndicadorProps) {
   const fonte = FONTES[indicador.fonte];
   const primeiro = serie?.pontos[0];
   const ultimo = serie?.pontos[serie.pontos.length - 1];
+  const faixa =
+    cobertura != null
+      ? { de: cobertura.de, ate: cobertura.ate, n: cobertura.n }
+      : primeiro && ultimo
+        ? { de: primeiro.data, ate: ultimo.data, n: serie?.pontos.length ?? 0 }
+        : null;
 
   return (
     <div className="text-muted-foreground grid gap-x-6 gap-y-2 text-[11px] sm:grid-cols-2">
@@ -47,10 +55,10 @@ export function FichaIndicador({ indicador, serie, recorte }: FichaIndicadorProp
       <Campo rotulo="Unidade">{indicador.unidade.nome}</Campo>
 
       <Campo rotulo="Cobertura">
-        {primeiro && ultimo ? (
+        {faixa ? (
           <span className="font-mono tabular-nums" data-num>
-            {formatarMesLongo(primeiro.data)} — {formatarMesLongo(ultimo.data)}
-            <span className="text-muted-foreground ml-1">({serie?.pontos.length} pontos)</span>
+            {formatarMesLongo(faixa.de)} — {formatarMesLongo(faixa.ate)}
+            <span className="text-muted-foreground ml-1">({faixa.n} pontos)</span>
           </span>
         ) : (
           "—"

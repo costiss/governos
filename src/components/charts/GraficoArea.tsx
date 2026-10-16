@@ -89,11 +89,18 @@ export function GraficoArea({
         isLoading={carregando}
         animation
         enableHoverHighlight={series.length > 1}
-        chartOptions={
-          recuoInferior > 0
-            ? { grid: { bottom: 8 + recuoInferior } }
-            : undefined
-        }
+        // O escape hatch do evilcharts faz spread raso: passar só `{ grid: {...} }`
+        // apagaria top/bottom. Por isso a grade é reescrita inteira, com o
+        // respiro lateral que impede o primeiro e o último rótulo de serem
+        // cortados na borda. Os 42px do topo são a faixa da legenda.
+        chartOptions={{
+          grid: {
+            left: 44,
+            right: 44,
+            top: 42,
+            bottom: 10 + recuoInferior,
+          },
+        }}
         className="h-full w-full"
       >
         <EChartsAreaChart.Grid />
@@ -102,7 +109,7 @@ export function GraficoArea({
           dataKey={xDataKey}
           tickFormatter={formatoX ? (valor) => formatoX(valor) : undefined}
         />
-        <EChartsAreaChart.Legend isClickable align="left" verticalAlign="top" />
+        <EChartsAreaChart.Legend isClickable align="left" verticalAlign="top" variant="horizontal-bar" />
         <EChartsAreaChart.Tooltip />
         {series.map((serie, indice) => (
           <EChartsAreaChart.Area

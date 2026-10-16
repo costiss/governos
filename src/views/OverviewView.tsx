@@ -9,7 +9,7 @@ import { TabelaMandatos } from "@/components/hud/TabelaMandatos";
 import { useHashRoute } from "@/hooks/useHashRoute";
 import { useApoio, useSerie } from "@/hooks/useSerie";
 import { NORMALIZACOES, type Normalizacao } from "@/lib/api/types";
-import { formatarCompacto, formatarMesCurto, formatarValor } from "@/lib/format";
+import { formatarCompacto, formatarEixo, formatarMesCurto } from "@/lib/format";
 import { GOVERNOS, fimDoGoverno, hoje } from "@/lib/governos";
 import { INDICADORES, indicadorPorId } from "@/lib/indicadores";
 import { normalizar, paraMensal, recortar, resumir, type ModoNormalizacao } from "@/lib/serie";
@@ -155,7 +155,7 @@ export function OverviewView() {
               xDataKey="data"
               series={[{ chave: "valor", rotulo: escolhido.curto }]}
               formatoX={formatarMesCurto}
-              formatoY={(valor) => formatarValor(valor, unidadeEfetiva).numero}
+              formatoY={(valor) => formatarEixo(valor, unidadeEfetiva.casas)}
               carregando={isPending}
             />
           )}
