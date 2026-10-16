@@ -188,6 +188,46 @@ pode fazer. Em vez disso:
 Assim o buraco é visível em vez de preenchido — e o caminho para o dado que existe fica a
 um toque.
 
+## Publicar
+
+A aplicação é um SPA estático — o build roda dentro da imagem, e o runtime é só um
+nginx servindo arquivos. **Nenhuma variável de ambiente, nenhuma chave, nenhum backend.**
+
+```bash
+docker build -t republica .
+docker run --rm -p 8080:8080 republica      # http://localhost:8080
+
+# ou
+docker compose up --build
+```
+
+### O que a imagem faz
+
+- **Build hermético.** Os 12 snapshots de dados vêm versionados no repositório, então a
+  etapa de build **não acessa a rede**. O resultado é reprodutível e funciona atrás de
+  firewall.
+- **Roda sem root.** O processo é o usuário `nginx` (UID 101) e escuta na **8080** —
+  porta que não exige privilégio. Em plataformas atrás de proxy reverso (Traefik,
+  Cloudflare, Dokploy), aponte para 8080.
+- **Cache correto.** Assets com hash no nome são imutáveis por um ano; o `index.html`
+  nunca é cacheado. Uma versão velha do HTML prenderia o visitante numa build antiga.
+- **CSP restritiva.** `connect-src` lista exatamente os três órgãos que o navegador
+  consulta — SIDRA, Ipea e Banco Central. O INPE não aparece porque o desmatamento vem
+  de snapshot. Se você adicionar um indicador de uma fonte nova, **precisa acrescentar o
+  host** em `docker/nginx.conf`, senão a requisição é bloqueada.
+- **Logs no `docker logs`** e `HEALTHCHECK` embutido.
+
+### Arquivos
+
+| Arquivo | Papel |
+| --- | --- |
+| `Dockerfile` | build multi-estágio: Node 24 + pnpm → nginx |
+| `docker/nginx.conf` | servidor, cache, gzip, cabeçalhos e CSP |
+| `docker-compose.yml` | atalho, com a porta ligada só ao host local por padrão |
+| `.dockerignore` | mantém `node_modules`, `dist` e `.git` fora do contexto |
+
+---
+
 ## Rodar
 
 ```bash
