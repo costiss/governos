@@ -28,6 +28,83 @@ function ehListaDeIndicadores(valor: unknown): valor is Indicador[] {
   );
 }
 
+// Ordem estável: por categoria na ordem editorial, depois por nome.
+const ORDEM_CATEGORIAS: Categoria[] = [
+  "economia",
+  "trabalho",
+  "social",
+  "saude",
+  "educacao",
+  "seguranca",
+  "ambiente",
+];
+
+/**
+ * Ordem editorial DENTRO de cada categoria.
+ *
+ * Sem isto a lista sai alfabética — e "Desocupação" apareceria atrás de
+ * "Informalidade", "Massa de rendimento" e "Ocupados", que é o contrário do que
+ * quem abre o app procura primeiro. O usuário não deveria ter de garimpar a
+ * taxa de desemprego. O que não estiver listado cai no fim, por nome.
+ */
+const ORDEM: Record<string, number> = {
+  // Economia — o que se cita numa discussão de governo, na ordem em que se cita.
+  "ipca-12-meses": 1,
+  "pib-real": 2,
+  "selic-meta": 3,
+  cambio: 4,
+  "divida-liquida": 5,
+  "resultado-primario": 6,
+  ipca: 7,
+  "selic-mes": 8,
+  "reservas-internacionais": 9,
+
+  // Trabalho e renda.
+  desocupacao: 1,
+  "rendimento-medio-real": 2,
+  "pessoas-ocupadas": 3,
+  informalidade: 4,
+  "massa-rendimento-real": 5,
+  "participacao-forca-trabalho": 6,
+  "desocupacao-anual": 7,
+  "desocupacao-pnad": 8,
+  "informalidade-pnad": 9,
+
+  // Desigualdade e pobreza.
+  gini: 1,
+  "pobreza-420": 2,
+  "extrema-pobreza": 3,
+  "razao-10-40": 4,
+  "pobreza-830": 5,
+  "pobreza-300": 6,
+  "gini-uf": 7,
+
+  // Saúde.
+  "mortalidade-infantil": 1,
+  "esperanca-de-vida": 2,
+  "mortalidade-na-infancia": 3,
+  "mortalidade-infantil-atlas": 4,
+  "esperanca-de-vida-atlas": 5,
+
+  // Educação.
+  analfabetismo: 1,
+  "anos-estudo-25m": 2,
+  "escolarizacao-6-14": 3,
+  "frequencia-fundamental": 4,
+  "analfabetismo-uf": 5,
+
+  // Segurança e ambiente.
+  "taxa-homicidios": 1,
+  homicidios: 2,
+  "desmatamento-amazonia-legal": 1,
+};
+
+const SEM_PREFERENCIA = 10_000;
+
+function posicao(indicador: Indicador): number {
+  return ORDEM[indicador.id] ?? SEM_PREFERENCIA;
+}
+
 function coletar(): Indicador[] {
   const vistos = new Map<string, Indicador>();
   const arquivos = Object.keys(modulos)
@@ -47,19 +124,11 @@ function coletar(): Indicador[] {
     }
   }
 
-  // Ordem estável: por categoria na ordem editorial, depois por nome.
-  const ordem: Categoria[] = [
-    "economia",
-    "trabalho",
-    "social",
-    "saude",
-    "educacao",
-    "seguranca",
-    "ambiente",
-  ];
   return [...vistos.values()].sort((a, b) => {
-    const porCategoria = ordem.indexOf(a.categoria) - ordem.indexOf(b.categoria);
-    return porCategoria !== 0 ? porCategoria : a.nome.localeCompare(b.nome, "pt-BR");
+    const porCategoria = ORDEM_CATEGORIAS.indexOf(a.categoria) - ORDEM_CATEGORIAS.indexOf(b.categoria);
+    if (porCategoria !== 0) return porCategoria;
+    const porPosicao = posicao(a) - posicao(b);
+    return porPosicao !== 0 ? porPosicao : a.nome.localeCompare(b.nome, "pt-BR");
   });
 }
 
