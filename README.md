@@ -152,8 +152,21 @@ na Visão geral e no seletor da visão Comparar imediatamente.
 
 ```bash
 pnpm install
-pnpm dev        # http://localhost:5173
-pnpm build      # type-check + bundle
+pnpm series:sincronizar   # opcional: só se os snapshots estiverem vencidos (180 dias)
+pnpm dev                  # http://localhost:5173
+pnpm build                # type-check + bundle
 ```
 
-Nenhuma chave de API. Nenhum backend. O navegador fala direto com os órgãos públicos.
+Nenhuma chave de API. Nenhum backend. O navegador fala direto com os órgãos
+públicos — exceto pelas três séries que ele *não consegue* buscar, e que vêm
+embarcadas (§ Cortesia com as APIs públicas).
+
+O bundle inicial é ~157 KB gzip. O ECharts (~237 KB gzip) entra sob demanda, só
+quando o gráfico aparece — o que pesa de verdade num celular.
+
+## Catálogo
+
+38 indicadores em 7 categorias, de 1971 a 2026 conforme a série. Cada um traz
+fonte, código de origem e URL conferível; a série inteira é plotada, sem recorte
+editorial, e a régua de mandatos mostra em que governo cada trecho caiu.
+
