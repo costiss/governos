@@ -10,6 +10,7 @@ import { formatarDuracao, formatarEixo, formatarValor } from "@/lib/format";
 import { GOVERNOS, mesesDeMandato, type Governo } from "@/lib/governos";
 import { juntarPorMandato } from "@/lib/grafico";
 import { INDICADORES, indicadorPorId } from "@/lib/indicadores";
+import type { Indicador } from "@/lib/indicadores/tipos";
 import { alinharPorMandato, normalizar, paraMensal, resumir, type ModoNormalizacao } from "@/lib/serie";
 import { cn } from "@/lib/utils";
 import { UFS } from "@/lib/uf";
@@ -94,6 +95,31 @@ export function CompareView() {
   }, [escolhido, modo]);
 
   const selecionados = [idA, idB].filter((id) => GOVERNOS.some((g) => g.id === id));
+
+  /**
+   * Mandatos em que este indicador tem dado.
+   *
+   * Serve para o caso comum de comparar dois governos que a série não cobre — a
+   * PNAD Contínua só começa em 2012, então "FHC II vs Lula I" no desemprego não
+   * tem nada a mostrar. Um gráfico vazio é um beco sem saída; a lista de quem
+   * TEM dado transforma o vazio em caminho.
+   */
+  const mandatosComDado = useMemo(
+    () => GOVERNOS.filter((governo) => alinharPorMandato(pontos, governo).length > 0),
+    [pontos],
+  );
+
+  const semDadoAlgum = useMemo(
+    () => alinhados.length > 0 && alinhados.every(({ pontos: doMandato }) => doMandato.length === 0),
+    [alinhados],
+  );
+
+  const primeiroAno = serie?.pontos[0] ? Number(serie.pontos[0].data.slice(0, 4)) : null;
+
+  const alternativas = useMemo(
+    () => (escolhido?.alternativas ?? []).map((id) => indicadorPorId(id)).filter(Boolean),
+    [escolhido],
+  );
 
   function alternarGoverno(id: string) {
     // Régua de dois lados: tocar num terceiro substitui o mais antigo.
@@ -186,6 +212,16 @@ export function CompareView() {
       <div className="h-[300px] sm:h-[400px]">
         {isPending ? (
           <CarregandoGrafico />
+        ) : semDadoAlgum ? (
+          <SemDadoComparacao
+            nomes={alinhados.map(({ governo }) => governo.mandato)}
+            primeiroAno={primeiroAno}
+            candidatos={mandatosComDado}
+            selecionados={selecionados}
+            aoEscolher={alternarGoverno}
+            alternativas={alternativas}
+            aoTrocarIndicador={(id) => definirParam("i", id)}
+          />
         ) : (
           <Suspense fallback={<CarregandoGrafico />}>
             <GraficoArea
@@ -221,8 +257,105 @@ export function CompareView() {
   );
 }
 
-/** Rótulo do eixo x: o tempo decorrido desde a posse. */
-function rotuloDoMes(rotulo: string): string {
+/**
+ * Quando nenhum dos dois mandatos escolhidos tem dado. Diz por quê e oferece
+ * os mandatos que têm — em vez de deixar um retângulo vazio.
+ */
+function SemDadoComparacao({
+  nomes,
+  primeiroAno,
+  candidatos,
+  selecionados,
+  aoEscolher,
+  alternativas,
+  aoTrocarIndicador,
+}: {
+  nomes: string[];
+  primeiroAno: number | null;
+  candidatos: Governo[];
+  selecionados: string[];
+  aoEscolher: (id: string) => void;
+  alternativas: Array<Indicador | undefined>;
+  aoTrocarIndicador: (id: string) => void;
+}) {
+  const segundoClique = selecionados.length >= 1;
+  const comDado = alternativas.filter((item): item is Indicador => Boolean(item));
+
+  return (
+    <div className="border-border flex h-full flex-col items-center justify-center gap-3 overflow-y-auto rounded-sm border border-dashed px-6 py-6 text-center">
+      <div>
+        <p className="text-foreground text-sm">
+          Esta série não cobre {nomes.length === 2 ? `${nomes[0]} nem ${nomes[1]}` : nomes[0]}.
+        </p>
+        <p className="text-muted-foreground mt-1 text-xs">
+          {primeiroAno != null
+            ? `O dado começa em ${primeiroAno} — os mandatos anteriores não têm valor, e o app não inventa um.`
+            : "Nenhum ponto disponível para este indicador."}
+        </p>
+      </div>
+
+      {comDado.length > 0 && (
+        <div className="max-w-xl">
+          <p className="rotulo mb-1.5">Mesmo conceito, outra série</p>
+          <div className="flex flex-wrap justify-center gap-1">
+            {comDado.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => aoTrocarIndicador(item.id)}
+                title={item.nome}
+                className={cn(
+                  "border-border-strong text-foreground rounded-sm border px-2 py-1 text-[11px] transition-colors",
+                  "hover:bg-accent focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
+                )}
+              >
+                {item.curto}
+                <span className="text-muted-foreground ml-1">desde {item.desde}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-muted-foreground mt-1.5 text-[10px]">
+            As séries oficiais têm quebras de metodologia; nenhuma cobre 1985 a hoje sozinha.
+          </p>
+        </div>
+      )}
+
+      {candidatos.length > 0 && (
+        <div className="max-w-xl">
+          <p className="rotulo mb-1.5">Mandatos com dado</p>
+          <div className="flex flex-wrap justify-center gap-1">
+            {candidatos.map((governo) => {
+              const ativo = selecionados.includes(governo.id);
+              return (
+                <button
+                  key={governo.id}
+                  type="button"
+                  onClick={() => aoEscolher(governo.id)}
+                  className={cn(
+                    "border-border rounded-sm border px-2 py-1 text-[11px] transition-colors",
+                    "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
+                    ativo
+                      ? "bg-foreground text-background border-transparent"
+                      : "text-muted-foreground hover:text-foreground hover:border-border-strong",
+                  )}
+                >
+                  {governo.mandato}
+                </button>
+              );
+            })}
+          </div>
+          {!segundoClique && (
+            <p className="text-muted-foreground mt-1.5 text-[10px]">
+              Toque para escolher — um toque define A, o seguinte define B.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Rótulo do eixo x: o tempo decorrido desde a posse. */function rotuloDoMes(rotulo: string): string {
   const mes = Number(rotulo);
   if (!Number.isFinite(mes)) return rotulo;
   if (mes === 0) return "posse";

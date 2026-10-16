@@ -58,6 +58,17 @@ export interface Indicador {
    * Quando presente, tem precedência sobre `fonte`/`serieEstadual`.
    */
   snapshot?: string;
+  /**
+   * Ids de indicadores que medem o MESMO conceito em outro período ou por outra
+   * fonte — a desocupação da PNAD antiga (1992–2014) e a da PNAD Contínua
+   * (2012+), por exemplo.
+   *
+   * Existe porque as séries oficiais têm quebras metodológicas: nenhuma cobre
+   * 1985 a hoje sozinha. Em vez de emendar fontes diferentes num gráfico só (o
+   * que produziria um salto de metodologia disfarçado de fato), o app mantém as
+   * séries separadas e oferece a irmã quando a escolhida não cobre o período.
+   */
+  alternativas?: string[];
   buscar: (opcoes: OpcoesBusca) => Promise<Serie>;
 }
 
