@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "series:sincronizar": "node scripts/series-grandes.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.23",

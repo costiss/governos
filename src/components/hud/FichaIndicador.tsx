@@ -2,7 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import { FONTES } from "@/lib/api/types";
 import type { Indicador } from "@/lib/indicadores/tipos";
 import type { Serie } from "@/lib/api/types";
-import { formatarMesLongo } from "@/lib/format";
+import { formatarDataLonga, formatarMesLongo } from "@/lib/format";
 
 /**
  * Cabeçalho de série: o que é, de onde veio, até quando vai.
@@ -53,6 +53,18 @@ export function FichaIndicador({ indicador, serie, recorte, cobertura }: FichaIn
       </Campo>
 
       <Campo rotulo="Unidade">{indicador.unidade.nome}</Campo>
+
+      {serie?.geradoEm && (
+        <Campo rotulo="Snapshot de build">
+          <span className="font-mono tabular-nums" data-num>
+            {formatarDataLonga(serie.geradoEm.slice(0, 10))}
+          </span>
+          <span className="text-muted-foreground ml-1">
+            — esta série é grande demais para ser baixada a cada visita; foi colhida uma
+            vez e embarcada.
+          </span>
+        </Campo>
+      )}
 
       <Campo rotulo="Cobertura">
         {faixa ? (

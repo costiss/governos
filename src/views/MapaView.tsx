@@ -26,7 +26,7 @@ export function MapaView() {
   const escolhido = indicadorPorId(rota.params.get("i")) ?? INDICADORES_MAPEAVEIS[0];
   const anoDesejado = rota.params.get("ano");
 
-  const { data, isPending, error } = useEstados(escolhido, escolhido?.serieEstadual);
+  const { data, isPending, error } = useEstados(escolhido);
 
   /** Converte o mapa código-do-território → série, para os códigos do IBGE. */
   const porUf = useMemo(() => {

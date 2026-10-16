@@ -76,7 +76,7 @@ export const INDICADORES_POR_UF = INDICADORES.filter((indicador) => indicador.po
 
 /** Indicadores com série estadual numa chamada só — os que podem ir ao mapa. */
 export const INDICADORES_MAPEAVEIS = INDICADORES.filter((indicador) =>
-  Boolean(indicador.porUf && indicador.serieEstadual),
+  Boolean(indicador.porUf && (indicador.snapshot || indicador.serieEstadual)),
 );
 
 export function porCategoria(): Array<{ categoria: Categoria; indicadores: Indicador[] }> {

@@ -49,6 +49,15 @@ export interface Indicador {
    * requisições — e a cortesia com a API pública vem primeiro.
    */
   serieEstadual?: string;
+  /**
+   * Nome do arquivo em `indicadores/dados/` que substitui a chamada de rede.
+   *
+   * Reservado às séries que o provedor só entrega inteiras — o Ipea devolve
+   * Brasil + UFs + 5.570 municípios (~70 MB) e ignora `$top`/`$filter`. O
+   * arquivo é gerado por `scripts/series-grandes.mjs` e traz Brasil e UFs.
+   * Quando presente, tem precedência sobre `fonte`/`serieEstadual`.
+   */
+  snapshot?: string;
   buscar: (opcoes: OpcoesBusca) => Promise<Serie>;
 }
 
@@ -57,7 +66,7 @@ export function montarSerie(
   indicador: Pick<Indicador, "id" | "fonte" | "unidade" | "frequencia" | "codigo">,
   pontos: Serie["pontos"],
   url: string,
-  extras: { revisavel?: boolean } = {},
+  extras: { revisavel?: boolean; geradoEm?: string } = {},
 ): Serie {
   return {
     indicadorId: indicador.id,

@@ -88,6 +88,12 @@ export interface Serie {
   codigo: string;
   /** O período mais recente ainda pode ser revisado pelo órgão. */
   revisavel?: boolean;
+  /**
+   * Quando o dado veio de snapshot de build (e não de rede em runtime), o
+   * instante da coleta. A interface exibe — snapshot sem data é dado sem
+   * procedência.
+   */
+  geradoEm?: string;
 }
 
 /** Normalizações aplicáveis a um indicador, alternáveis pelo usuário. */

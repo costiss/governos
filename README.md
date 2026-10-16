@@ -48,6 +48,20 @@ janela nem por reconexão**: histórico de governo não muda.
 **3. Persistência em IndexedDB** (`src/lib/idb.ts`) — o cache sobrevive ao fechamento da
 aba. Cada série é buscada *uma vez por navegador*, não uma vez por visita.
 
+**4. Snapshot de build para as séries gigantes** (`scripts/series-grandes.mjs`) — algumas
+séries do Ipea misturam Brasil, as 27 UFs e os 5.570 municípios numa resposta só, e o
+serviço **ignora `$top`, `$skip` e `$filter`**: a taxa de homicídios devolve ~70 MB de
+qualquer jeito. Baixar isso pelo navegador seria ~70 MB por visitante — exatamente o
+abuso que o app existe para evitar. Então essas séries são colhidas **uma vez, no
+build**, filtradas para Brasil + UFs e embarcadas como JSON de ~47 KB:
+
+```bash
+pnpm series:sincronizar
+```
+
+O snapshot grava a data da coleta e a URL de origem, e o app mostra as duas na ficha de
+procedência — snapshot sem carimbo de data é dado sem procedência.
+
 O resultado: abrir o app em um computador novo custa algumas dezenas de requisições, e
 nenhuma nas aberturas seguintes.
 
@@ -61,6 +75,7 @@ src/
 │   ├── indicadores/    o catálogo. Um arquivo por categoria.
 │   │   ├── tipos.ts    a interface Indicador — o contrato
 │   │   ├── apoio.ts    denominadores (população, PIB)
+│   │   ├── dados/      snapshots de build das séries gigantes
 │   │   └── index.ts    registro por import.meta.glob
 │   ├── governos.ts     os 12 mandatos, 1985 → hoje
 │   ├── serie.ts        recorte, reamostragem, normalização, alinhamento por mandato

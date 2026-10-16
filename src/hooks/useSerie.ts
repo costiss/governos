@@ -3,6 +3,7 @@ import type { Ponto, Serie } from "@/lib/api/types";
 import type { Indicador, OpcoesBusca } from "@/lib/indicadores/tipos";
 import { buscarPib, buscarPopulacao, buscarPopulacaoPorUf } from "@/lib/indicadores/apoio";
 import { buscarIpeaPorTerritorio } from "@/lib/api/ipea";
+import { lerSnapshotPorUf } from "@/lib/api/snapshot";
 import { TTL_CONSOLIDADO, TTL_CORRENTE } from "@/lib/queryClient";
 
 /**
@@ -66,15 +67,26 @@ export function usePopulacaoPorUf() {
 }
 
 /**
- * Valores mais recentes por UF, para o mapa. Só funciona em indicadores cuja
- * série é estadual no Ipea (campo `TERCODIGO`).
+ * Valores por UF, para o mapa.
+ *
+ * Duas origens possíveis, nesta ordem:
+ *   1. snapshot de build — para as séries que o provedor só entrega inteiras;
+ *   2. `serieEstadual` do Ipea — uma chamada só, filtrada por nível no adapter.
+ *
+ * Nunca 27 requisições: a cortesia com a API pública é o critério.
  */
-export function useEstados(indicador: Indicador | undefined, codigoIpea: string | undefined) {
+export function useEstados(indicador: Indicador | undefined) {
+  const arquivo = indicador?.snapshot;
+  const codigo = indicador?.serieEstadual;
+
   return useQuery({
-    queryKey: ["estados", indicador?.id, codigoIpea],
-    enabled: Boolean(indicador && codigoIpea),
-    staleTime: TTL_CONSOLIDADO,
-    queryFn: ({ signal }) =>
-      buscarIpeaPorTerritorio({ codigo: codigoIpea!, rotulo: indicador!.nome, signal }),
+    queryKey: ["estados", indicador?.id],
+    enabled: Boolean(indicador && (arquivo || codigo)),
+    // Snapshot é imutável dentro da sessão; série viva segue a política geral.
+    staleTime: arquivo ? Number.POSITIVE_INFINITY : TTL_CONSOLIDADO,
+    queryFn: async ({ signal }) => {
+      if (arquivo) return lerSnapshotPorUf(arquivo);
+      return buscarIpeaPorTerritorio({ codigo: codigo!, rotulo: indicador!.nome, signal });
+    },
   });
 }
