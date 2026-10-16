@@ -11,6 +11,23 @@ Três visões:
 | **Comparar** | Dois mandatos, lado a lado, sobrepostos pelo tempo de mandato. |
 | **Mapa** | Onde, hoje, a situação está melhor ou pior entre as 27 unidades da federação. |
 
+### Limitar o recorte
+
+Cada visão tem o seu controle de janela, e cada um respeita o eixo que a tela usa:
+
+- **Visão geral — Período.** "De" e "até" sobre a cobertura real da série, com a
+  granularidade do dado: série anual pede ano, série mensal pede mês e ano. Oferecer um
+  calendário de dias para uma série anual seria mais preciso que a informação. Atalhos:
+  Tudo, Plano Real, últimos 20 e 10 anos. O recorte é aplicado **antes** da normalização,
+  então `base100` ancora no início da janela escolhida.
+- **Comparar — Janela.** Aqui o eixo não é o calendário, é o tempo de mandato; limitar
+  significa comparar só os primeiros 12, 24 ou 36 meses de cada governo.
+- **Mapa — Ano.** A série anual já tem seletor de ano.
+
+Recorte de período e seleção de mandato são **mutuamente exclusivos**: compor os dois
+produziria um gráfico vazio sempre que o mandato caísse fora da janela — e vazio sem
+explicação é pior que controle nenhum.
+
 ## Por que o app existe
 
 Balanços de governo costumam ser séries recortadas para provar um ponto. Aqui as séries

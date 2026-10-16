@@ -67,5 +67,24 @@ export function useHashRoute() {
     [],
   );
 
-  return { rota, ir, definirParam };
+  /**
+   * Altera vários parâmetros de uma vez, numa única escrita no hash.
+   *
+   * Necessário porque alguns filtros são mutuamente exclusivos: escolher um
+   * período precisa limpar o mandato selecionado. Em duas chamadas separadas, a
+   * primeira navegação renderizaria um estado intermediário inválido — e o
+   * usuário veria um piscar de gráfico vazio.
+   */
+  const definirParams = useCallback((alteracoes: Record<string, string | null>) => {
+    const proxima = new URLSearchParams(window.location.hash.split("?")[1] ?? "");
+    for (const [chave, valor] of Object.entries(alteracoes)) {
+      if (valor == null || valor === "") proxima.delete(chave);
+      else proxima.set(chave, valor);
+    }
+    const caminho = window.location.hash.replace(/^#\/?/, "").split("?")[0] || "geral";
+    const query = proxima.toString();
+    window.location.hash = `#/${caminho}${query ? `?${query}` : ""}`;
+  }, []);
+
+  return { rota, ir, definirParam, definirParams };
 }

@@ -45,6 +45,17 @@ export function CompareView() {
   const governoA = GOVERNOS.find((g) => g.id === idA);
   const governoB = GOVERNOS.find((g) => g.id === idB);
 
+  /**
+   * Janela de comparação, em meses desde a posse.
+   *
+   * É o análogo do filtro de período nesta tela: o eixo aqui não é o calendário,
+   * é o tempo de mandato, então "limitar" significa comparar só os primeiros
+   * N meses de cada governo — o que responde perguntas como "como foram os dois
+   * primeiros anos de cada um?" sem o peso dos anos finais.
+   */
+  const janelaBruta = rota.params.get("j") ?? "tudo";
+  const janela = ["12", "24", "36"].includes(janelaBruta) ? Number(janelaBruta) : null;
+
   // Sobrepor dois governos só é honesto na mesma unidade. `base100` é a opção
   // mais justa quando a série é acumulativa, mas não é um padrão seguro — uma
   // taxa que cruza o zero não pode ser indexada. Então o padrão é o valor como
@@ -65,11 +76,14 @@ export function CompareView() {
   const alinhados = useMemo(() => {
     return [governoA, governoB]
       .filter((governo): governo is Governo => Boolean(governo))
-      .map((governo) => ({
-        governo,
-        pontos: alinharPorMandato(pontos, governo),
-      }));
-  }, [pontos, governoA, governoB]);
+      .map((governo) => {
+        const doMandato = alinharPorMandato(pontos, governo);
+        return {
+          governo,
+          pontos: janela == null ? doMandato : doMandato.filter((ponto) => ponto.mes <= janela),
+        };
+      });
+  }, [pontos, governoA, governoB, janela]);
 
   const dadosGrafico = useMemo(() => {
     return juntarPorMandato(
@@ -192,6 +206,19 @@ export function CompareView() {
                 aoMudar={(valor) => definirParam("n", valor === normalizacaoPadrao ? null : valor)}
               />
             )}
+
+            <Segmentado
+              rotulo="Janela de comparação"
+              compacto
+              itens={[
+                { valor: "tudo", rotulo: "Mandato inteiro", descricao: "Todos os meses de cada governo" },
+                { valor: "36", rotulo: "3 anos", descricao: "Só os primeiros 36 meses de cada mandato" },
+                { valor: "24", rotulo: "2 anos", descricao: "Só os primeiros 24 meses de cada mandato" },
+                { valor: "12", rotulo: "1 ano", descricao: "Só os primeiros 12 meses de cada mandato" },
+              ]}
+              valor={janela == null ? "tudo" : String(janela)}
+              aoMudar={(valor) => definirParam("j", valor === "tudo" ? null : valor)}
+            />
           </div>
         </div>
       </header>

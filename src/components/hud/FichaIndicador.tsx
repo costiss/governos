@@ -18,9 +18,21 @@ interface FichaIndicadorProps {
   recorte?: string;
   /** Cobertura explicitada quando não há uma `Serie` única (ex.: o mapa). */
   cobertura?: { de: string; ate: string; n: number } | null;
+  /**
+   * Recorte em vigor, quando a tela mostra menos que a série inteira.
+   * Sem isto, a ficha diz "1980 a 2026" e o gráfico começa em 1994 — e a
+   * contradição fica sem explicação.
+   */
+  exibindo?: { de: string; ate: string } | null;
 }
 
-export function FichaIndicador({ indicador, serie, recorte, cobertura }: FichaIndicadorProps) {
+export function FichaIndicador({
+  indicador,
+  serie,
+  recorte,
+  cobertura,
+  exibindo,
+}: FichaIndicadorProps) {
   const fonte = FONTES[indicador.fonte];
   const primeiro = serie?.pontos[0];
   const ultimo = serie?.pontos[serie.pontos.length - 1];
@@ -51,6 +63,17 @@ export function FichaIndicador({ indicador, serie, recorte, cobertura }: FichaIn
         {recorte ?? "Brasil"}
         {indicador.porUf && <span className="ml-1 font-mono text-[10px]">(por UF)</span>}
       </Campo>
+
+      {exibindo && (
+        <Campo rotulo="Exibindo">
+          <span className="font-mono tabular-nums" data-num>
+            {formatarMesLongo(exibindo.de)} — {formatarMesLongo(exibindo.ate)}
+          </span>
+          <span className="text-muted-foreground ml-1">
+            (a série completa vai além; veja Cobertura)
+          </span>
+        </Campo>
+      )}
 
       <Campo rotulo="Unidade">{indicador.unidade.nome}</Campo>
 

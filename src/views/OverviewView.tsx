@@ -3,6 +3,7 @@ import { CarregandoGrafico, FalhaSerie, EstadoVazio } from "@/components/hud/Est
 import { FichaIndicador } from "@/components/hud/FichaIndicador";
 import { Regua, type ValorPorMandato } from "@/components/hud/Regua";
 import { Segmentado } from "@/components/hud/Segmentado";
+import { SeletorPeriodo } from "@/components/hud/SeletorPeriodo";
 import { SeletorIndicador } from "@/components/hud/SeletorIndicador";
 import { TabelaMandatos } from "@/components/hud/TabelaMandatos";
 import { useHashRoute } from "@/hooks/useHashRoute";
@@ -26,24 +27,40 @@ import { UFS } from "@/lib/uf";
  */
 
 export function OverviewView() {
-  const { rota, definirParam } = useHashRoute();
+  const { rota, definirParam, definirParams } = useHashRoute();
   const apoio = useApoio();
 
   const escolhido = indicadorPorId(rota.params.get("i")) ?? INDICADORES[0];
   const uf = rota.params.get("uf") ?? undefined;
   const mandatoAtivo = rota.params.get("g");
+  const de = rota.params.get("de");
+  const ate = rota.params.get("ate");
   const modo = (rota.params.get("n") as ModoNormalizacao | null) ?? "absoluto";
 
   const { data: serie, isPending, error } = useSerie(escolhido, uf);
 
-  // Normalização: aplicada sobre a série mensal, para o índice e o per capita
-  // caírem na mesma grade.
+  /** Grade mensal completa, antes de qualquer recorte — define os limites do seletor. */
+  const mensal = useMemo(() => (serie ? paraMensal(serie.pontos) : []), [serie]);
+  const limiteMin = mensal[0]?.data ?? null;
+  const limiteMax = mensal[mensal.length - 1]?.data ?? null;
+
+  /**
+   * Recorte de período, aplicado ANTES da normalização.
+   *
+   * A ordem importa: `base100` ancora no primeiro ponto do recorte. Limitando a
+   * 1994, o índice parte de 100 em 1994 — que é o que se quer ao comparar
+   * trajetórias a partir de um marco, e não de 1980.
+   */
+  const recortado = useMemo(
+    () => recortar(mensal, de ?? undefined, ate ?? undefined),
+    [mensal, de, ate],
+  );
+
   const pontos = useMemo(() => {
-    if (!serie) return [];
-    const mensal = paraMensal(serie.pontos);
+    if (recortado.length === 0) return [];
     const modoValido = escolhido?.normalizacoes.includes(modo as Normalizacao) ? modo : "absoluto";
-    return normalizar(mensal, modoValido, apoio).pontos;
-  }, [serie, modo, escolhido, apoio]);
+    return normalizar(recortado, modoValido, apoio).pontos;
+  }, [recortado, modo, escolhido, apoio]);
 
   const visiveis = useMemo(() => {
     if (!mandatoAtivo) return pontos;
@@ -112,7 +129,7 @@ export function OverviewView() {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {escolhido.porUf && (
                 <select
                   value={uf ?? ""}
@@ -127,6 +144,23 @@ export function OverviewView() {
                     </option>
                   ))}
                 </select>
+              )}
+
+              {limiteMin && limiteMax && (
+                <SeletorPeriodo
+                  minimo={limiteMin}
+                  maximo={limiteMax}
+                  frequencia={escolhido.frequencia}
+                  de={de}
+                  ate={ate}
+                  // Período e mandato são recortes concorrentes: compor os dois
+                  // produziria um gráfico vazio sempre que o mandato caísse fora
+                  // da janela. Escolher um limpa o outro — numa escrita só, para
+                  // não renderizar o estado intermediário.
+                  aoMudar={(novoDe, novoAte) =>
+                    definirParams({ de: novoDe, ate: novoAte, g: null })
+                  }
+                />
               )}
 
               {escolhido.normalizacoes.length > 1 && (
@@ -182,7 +216,7 @@ export function OverviewView() {
           </div>
           <Regua
             selecionados={mandatoAtivo ? [mandatoAtivo] : []}
-            aoAlternar={(id) => definirParam("g", mandatoAtivo === id ? null : id)}
+            aoAlternar={(id) => definirParams({ g: mandatoAtivo === id ? null : id, de: null, ate: null })}
             valores={valoresDaRegua}
             comValores
           />
@@ -198,7 +232,7 @@ export function OverviewView() {
               pontos={pontos}
               unidade={unidadeEfetiva}
               selecionados={mandatoAtivo ? [mandatoAtivo] : []}
-              aoAlternar={(id) => definirParam("g", mandatoAtivo === id ? null : id)}
+              aoAlternar={(id) => definirParams({ g: mandatoAtivo === id ? null : id, de: null, ate: null })}
             />
           </div>
         </div>
@@ -208,6 +242,14 @@ export function OverviewView() {
             indicador={escolhido}
             serie={serie}
             recorte={uf ? (UFS.find((e) => e.sigla === uf)?.nome ?? uf) : "Brasil"}
+            exibindo={
+              recortado.length > 0 && (de != null || ate != null)
+                ? {
+                    de: recortado[0].data,
+                    ate: recortado[recortado.length - 1].data,
+                  }
+                : null
+            }
           />
         </div>
       </section>
