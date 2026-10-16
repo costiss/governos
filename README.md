@@ -148,6 +148,25 @@ export const INDICADORES_ECONOMIA: Indicador[] = [
 O registro descobre o arquivo sozinho — **não há lista para editar**. O indicador aparece
 na Visão geral e no seletor da visão Comparar imediatamente.
 
+## Séries e quebras metodológicas
+
+Nenhuma série oficial cobre 1985 a hoje sozinha. A taxa de desocupação, por exemplo,
+existe em duas: PNAD antiga (1992–2014) e PNAD Contínua (2012–hoje) — metodologias
+diferentes, patamares diferentes.
+
+O app **não emenda as duas num gráfico só**. Emendar fontes distintas produz um salto
+metodológico disfarçado de fato, que é precisamente o que um comparador de governos não
+pode fazer. Em vez disso:
+
+- as séries ficam separadas, cada uma com sua fonte e seu recorte declarados;
+- o campo `alternativas` liga os indicadores que medem o **mesmo conceito em outro
+  período**;
+- quando a comparação escolhida não tem dado, a tela explica **por quê** ("o dado começa
+  em 2012") e oferece tanto os mandatos que têm dado quanto as séries irmãs.
+
+Assim o buraco é visível em vez de preenchido — e o caminho para o dado que existe fica a
+um toque.
+
 ## Rodar
 
 ```bash
