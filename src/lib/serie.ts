@@ -1,4 +1,4 @@
-import type { Ponto, Serie } from "@/lib/api/types";
+import type { Ponto } from "@/lib/api/types";
 import { mesesEntre } from "@/lib/governos";
 import type { Governo } from "@/lib/governos";
 
