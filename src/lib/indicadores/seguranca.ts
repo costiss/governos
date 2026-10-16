@@ -88,4 +88,70 @@ const homicidios: Indicador = {
   },
 };
 
-export const INDICADORES_SEGURANCA: Indicador[] = [taxaHomicidios, homicidios];
+const SUICIDIOS_POR_CEM_MIL: Unidade = {
+  simbolo: "por 100 mil hab.",
+  nome: "suicídios por 100 mil habitantes",
+  casas: 1,
+};
+
+const TRANSITO_POR_CEM_MIL: Unidade = {
+  simbolo: "por 100 mil hab.",
+  nome: "óbitos por acidente de trânsito por 100 mil habitantes",
+  casas: 1,
+};
+
+const taxaSuicidios: Indicador = {
+  id: "taxa-suicidios",
+  nome: "Taxa de suicídios",
+  curto: "Suicídios",
+  categoria: "seguranca",
+  descricao:
+    "Óbitos por lesões autoprovocadas voluntariamente a cada 100 mil habitantes, segundo o local " +
+    "de residência. Causa CID-10 X60–X84; até 1995, os códigos CID-9 E950–E959. Fonte: MS/SVS, " +
+    "Sistema de Informações sobre Mortalidade (SIM), republicado pelo Ipea. Cobre o Brasil e o " +
+    "recorte por Unidade da Federação.",
+  unidade: SUICIDIOS_POR_CEM_MIL,
+  frequencia: "anual",
+  desde: 1980,
+  direcao: "baixo-melhor",
+  fonte: "ipea",
+  codigo: "Ipea AVIOL12_TSUICID",
+  consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=1611149428",
+  normalizacoes: ["absoluto", "base100"],
+  porUf: true,
+  snapshot: "suicidios-uf.json",
+  async buscar({ uf }) {
+    return serieDoSnapshot(taxaSuicidios, "suicidios-uf.json", uf);
+  },
+};
+
+const taxaAcidentesTransito: Indicador = {
+  id: "taxa-acidentes-transito",
+  nome: "Taxa de óbitos por acidente de trânsito",
+  curto: "Acidentes de trânsito",
+  categoria: "seguranca",
+  descricao:
+    "Vítimas fatais de acidentes de trânsito a cada 100 mil habitantes, segundo o local de " +
+    "residência. Fonte: MS/SVS, Sistema de Informações sobre Mortalidade (SIM), republicado pelo " +
+    "Ipea. Cobre o Brasil e o recorte por Unidade da Federação.",
+  unidade: TRANSITO_POR_CEM_MIL,
+  frequencia: "anual",
+  desde: 1980,
+  direcao: "baixo-melhor",
+  fonte: "ipea",
+  codigo: "Ipea AVIOL12_TACIDT",
+  consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=1611149416",
+  normalizacoes: ["absoluto", "base100"],
+  porUf: true,
+  snapshot: "acidentes-transito-uf.json",
+  async buscar({ uf }) {
+    return serieDoSnapshot(taxaAcidentesTransito, "acidentes-transito-uf.json", uf);
+  },
+};
+
+export const INDICADORES_SEGURANCA: Indicador[] = [
+  taxaHomicidios,
+  homicidios,
+  taxaAcidentesTransito,
+  taxaSuicidios,
+];

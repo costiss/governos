@@ -221,4 +221,96 @@ export const INDICADORES_SOCIAL: Indicador[] = [
       return serieDoSnapshot(this, "atlas-extrema-pobreza.json");
     },
   },
+  {
+    id: "inseguranca-alimentar-grave",
+    nome: "Domicílios com insegurança alimentar grave",
+    curto: "Insegurança alimentar grave",
+    categoria: "social",
+    descricao:
+      "Percentual de domicílios em insegurança alimentar grave, o grau mais severo da Escala " +
+      "Brasileira de Insegurança Alimentar (EBIA): quando os moradores chegam a passar fome. É o " +
+      "indicador da fome no país. Medido pelo IBGE nos suplementos de segurança alimentar das PNAD " +
+      "(2004, 2009, 2013) e da PNAD Contínua (2018 e 2023) — um ponto a cada cinco anos.",
+    unidade: { simbolo: "%", nome: "percentual dos domicílios", casas: 2, sufixo: "%" },
+    frequencia: "anual",
+    desde: 2004,
+    direcao: "baixo-melhor",
+    fonte: "ipea",
+    codigo: "Ipea PNAD_IAGRV (IBGE/PNAD)",
+    consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=2096727419",
+    normalizacoes: ["absoluto", "base100"],
+    async buscar({ signal }) {
+      return serieNacional(this, "PNAD_IAGRV", signal, "0");
+    },
+  },
+  {
+    id: "inseguranca-alimentar",
+    nome: "Domicílios com insegurança alimentar (qualquer grau)",
+    curto: "Insegurança alimentar",
+    categoria: "social",
+    descricao:
+      "Percentual de domicílios em insegurança alimentar em qualquer grau — leve, moderada ou " +
+      "grave —, medido pela Escala Brasileira de Insegurança Alimentar (EBIA) nos suplementos das " +
+      "PNAD (2004, 2009, 2013) e da PNAD Contínua (2018 e 2023), do IBGE. Um ponto a cada cinco anos.",
+    unidade: { simbolo: "%", nome: "percentual dos domicílios", casas: 2, sufixo: "%" },
+    frequencia: "anual",
+    desde: 2004,
+    direcao: "baixo-melhor",
+    fonte: "ipea",
+    codigo: "Ipea PNAD_IATOT (IBGE/PNAD)",
+    consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=2096727410",
+    normalizacoes: ["absoluto", "base100"],
+    async buscar({ signal }) {
+      return serieNacional(this, "PNAD_IATOT", signal, "0");
+    },
+  },
+  {
+    id: "bolsa-familia-valor",
+    nome: "Bolsa Família — valor total mensal dos benefícios",
+    curto: "Bolsa Família (R$)",
+    categoria: "social",
+    descricao:
+      "Soma mensal transferida pelo Programa Bolsa Família — que se chamou Auxílio Brasil entre " +
+      "2021 e 2023 —, excluídos os benefícios suspensos. Fonte: Portal da Transparência do Governo " +
+      "Federal, republicada pelo Ipea. Valores nominais, em milhares de reais.",
+    unidade: {
+      simbolo: "R$ mil",
+      nome: "milhares de reais transferidos por mês",
+      casas: 0,
+      prefixo: "R$ ",
+      sufixo: " mil",
+    },
+    frequencia: "mensal",
+    desde: 2013,
+    direcao: null,
+    fonte: "ipea",
+    codigo: "Ipea VAL_PBF12 (MDS)",
+    consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=2096726779",
+    normalizacoes: ["absoluto", "base100"],
+    async buscar({ signal }) {
+      return serieNacional(this, "VAL_PBF12", signal, "0");
+    },
+  },
+  {
+    id: "bolsa-familia-beneficios",
+    nome: "Bolsa Família — número de benefícios",
+    curto: "Bolsa Família (nº)",
+    categoria: "social",
+    descricao:
+      "Número de benefícios ativos do Programa Bolsa Família em dezembro de cada ano — que se " +
+      "chamou Auxílio Brasil entre 2021 e 2023 —, excluídos os suspensos. Fonte: Portal da " +
+      "Transparência do Governo Federal, republicada pelo Ipea.",
+    unidade: { simbolo: "benefícios", nome: "benefícios ativos em dezembro", casas: 0 },
+    frequencia: "anual",
+    desde: 2004,
+    direcao: null,
+    fonte: "ipea",
+    codigo: "Ipea FAM_PBF (MDS)",
+    consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=290547434",
+    normalizacoes: ["absoluto", "base100"],
+    snapshot: "bolsa-familia-beneficios-uf.json",
+    async buscar() {
+      return serieDoSnapshot(this, "bolsa-familia-beneficios-uf.json");
+    },
+  },
 ];

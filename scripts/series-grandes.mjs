@@ -179,6 +179,36 @@ const SERIES = [
       }),
   },
   {
+    arquivo: "suicidios-uf.json",
+    descricao: "Taxa de suicídios por 100 mil habitantes — Brasil e UFs",
+    motivo: "Ipea devolve ~65 MB e ignora $top/$filter",
+    capturar: () =>
+      capturarIpea({
+        codigo: "AVIOL12_TSUICID",
+        niveis: ["brasil", "uf"],
+      }),
+  },
+  {
+    arquivo: "acidentes-transito-uf.json",
+    descricao: "Taxa de óbitos por acidente de trânsito por 100 mil habitantes — Brasil e UFs",
+    motivo: "Ipea devolve ~73 MB e ignora $top/$filter",
+    capturar: () =>
+      capturarIpea({
+        codigo: "AVIOL12_TACIDT",
+        niveis: ["brasil", "uf"],
+      }),
+  },
+  {
+    arquivo: "bolsa-familia-beneficios-uf.json",
+    descricao: "Bolsa Família — número de benefícios em dezembro — Brasil e UFs",
+    motivo: "Ipea devolve ~20 MB com os 5.570 municípios e ignora $top/$filter",
+    capturar: () =>
+      capturarIpea({
+        codigo: "FAM_PBF",
+        niveis: ["brasil", "uf"],
+      }),
+  },
+  {
     arquivo: "desmatamento-amazonia.json",
     descricao: "Desmatamento na Amazônia Legal — PRODES",
     motivo: "o TerraBrasilis não envia Access-Control-Allow-Origin",

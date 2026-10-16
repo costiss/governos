@@ -162,4 +162,32 @@ export const INDICADORES_SAUDE: Indicador[] = [
       return serieDoSnapshot(this, "atlas-esperanca-vida.json");
     },
   },
+  {
+    id: "leitos-sus",
+    nome: "Leitos para internação pelo SUS por 10 mil habitantes",
+    curto: "Leitos do SUS",
+    categoria: "saude",
+    descricao:
+      "Número médio mensal de leitos de internação disponíveis pelo SUS a cada 10 mil habitantes " +
+      "— a oferta de atenção hospitalar pública. Fonte: DATASUS (Sistema de Informações " +
+      "Hospitalares), republicado pelo Ipea. Alimenta o mapa por Unidade da Federação.",
+    unidade: {
+      simbolo: "por 10 mil hab.",
+      nome: "leitos para internação pelo SUS por 10 mil habitantes",
+      casas: 1,
+    },
+    frequencia: "anual",
+    desde: 2010,
+    direcao: "alto-melhor",
+    fonte: "datasus",
+    codigo: "Ipea SIS_NMLTINTSUS1000HUF",
+    consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=2096726985",
+    normalizacoes: ["absoluto", "base100"],
+    porUf: true,
+    serieEstadual: "SIS_NMLTINTSUS1000HUF",
+    async buscar({ uf, signal }) {
+      const territorio = uf ? (CODIGO_UF[uf] ?? "0") : "0";
+      return serieIpea(this, "SIS_NMLTINTSUS1000HUF", territorio, signal);
+    },
+  },
 ];

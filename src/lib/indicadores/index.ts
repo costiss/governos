@@ -51,16 +51,17 @@ const ORDEM: Record<string, number> = {
   // Economia — o que se cita numa discussão de governo, na ordem em que se cita.
   "ipca-12-meses": 1,
   "pib-real": 2,
-  "selic-meta": 3,
-  cambio: 4,
-  "divida-liquida": 5,
-  "divida-bruta": 6,
-  "resultado-primario": 7,
-  ipca: 8,
-  "selic-mes": 9,
-  "reservas-internacionais": 10,
-  investimento: 11,
-  "taxa-investimento": 12,
+  "pib-per-capita": 3,
+  "selic-meta": 4,
+  cambio: 5,
+  "divida-liquida": 6,
+  "divida-bruta": 7,
+  "resultado-primario": 8,
+  ipca: 9,
+  "selic-mes": 10,
+  "reservas-internacionais": 11,
+  investimento: 12,
+  "taxa-investimento": 13,
 
   // Trabalho e renda.
   desocupacao: 1,
@@ -82,17 +83,22 @@ const ORDEM: Record<string, number> = {
   "renda-per-capita": 3,
   "pobreza-420": 4,
   "extrema-pobreza": 5,
-  "razao-10-40": 6,
-  "pobreza-830": 7,
-  "pobreza-300": 8,
-  "gini-uf": 9,
+  "inseguranca-alimentar-grave": 6,
+  "inseguranca-alimentar": 7,
+  "bolsa-familia-valor": 8,
+  "bolsa-familia-beneficios": 9,
+  "razao-10-40": 10,
+  "pobreza-830": 11,
+  "pobreza-300": 12,
+  "gini-uf": 13,
 
   // Saúde.
   "mortalidade-infantil": 1,
   "esperanca-de-vida": 2,
-  "mortalidade-na-infancia": 3,
-  "mortalidade-infantil-atlas": 4,
-  "esperanca-de-vida-atlas": 5,
+  "leitos-sus": 3,
+  "mortalidade-na-infancia": 4,
+  "mortalidade-infantil-atlas": 5,
+  "esperanca-de-vida-atlas": 6,
 
   // Educação.
   analfabetismo: 1,
@@ -104,6 +110,8 @@ const ORDEM: Record<string, number> = {
   // Segurança e ambiente.
   "taxa-homicidios": 1,
   homicidios: 2,
+  "taxa-acidentes-transito": 3,
+  "taxa-suicidios": 4,
   "desmatamento-amazonia-legal": 1,
 };
 
@@ -139,6 +147,15 @@ const ALTERNATIVAS: Record<string, string[]> = {
   "pobreza-300": ["pobreza-420", "pobreza-830"],
   "pobreza-420": ["pobreza-300", "pobreza-830"],
   "pobreza-830": ["pobreza-300", "pobreza-420"],
+
+  // Fome e transferência de renda: as séries irmãs que medem o mesmo fenômeno
+  // por ângulos distintos — insegurança alimentar grave e total, valor e número
+  // de benefícios do Bolsa Família.
+  "inseguranca-alimentar-grave": ["inseguranca-alimentar"],
+  "inseguranca-alimentar": ["inseguranca-alimentar-grave"],
+
+  "bolsa-familia-valor": ["bolsa-familia-beneficios"],
+  "bolsa-familia-beneficios": ["bolsa-familia-valor"],
 };
 
 function posicao(indicador: Indicador): number {

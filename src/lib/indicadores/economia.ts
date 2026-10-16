@@ -444,8 +444,63 @@ const taxaInvestimento: Indicador = {
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Renda per capita
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** URL verificável do PIB per capita no Ipea Data. */
+const URL_IPEA_PIB_PER_CAPITA = montarUrlIpea("GAC_PIBCAPN");
+
+/**
+ * Primeiro ano com valor comparável em reais correntes.
+ *
+ * O Ipea entrega a série desde 1900, mas os anos anteriores ao Plano Real vêm
+ * como um resíduo numérico quase nulo (a moeda mudou de escala várias vezes);
+ * compará-los com os valores de hoje seria enganoso. O recorte começa em 1994.
+ */
+const PIB_PER_CAPITA_DESDE = "1994-01-01";
+
+const pibPerCapita: Indicador = {
+  id: "pib-per-capita",
+  nome: "PIB per capita (R$ correntes)",
+  curto: "PIB per capita",
+  categoria: "economia",
+  descricao:
+    "Produto Interno Bruto dividido pela população residente, a preços correntes do ano — quanto " +
+    "a economia produz por habitante. Série do Ipea estimada a partir do PIB nominal e da " +
+    "população do IBGE. Como os valores são nominais, anos distantes não são comparáveis entre " +
+    "si (a inflação corrói o poder de compra), e o recorte começa em 1994: antes do Plano Real " +
+    "a série vem como resíduo das trocas de moeda e não mede reais de verdade.",
+  unidade: {
+    simbolo: "R$",
+    nome: "reais correntes por habitante",
+    casas: 0,
+    prefixo: "R$ ",
+  },
+  frequencia: "anual",
+  desde: 1994,
+  direcao: "alto-melhor",
+  fonte: "ipea",
+  codigo: "Ipea GAC_PIBCAPN (IBGE/Ipea)",
+  consulta: URL_IPEA_PIB_PER_CAPITA,
+  normalizacoes: ["absoluto", "base100"],
+  buscar: async (opcoes) => {
+    const pontos = await buscarIpea({
+      codigo: "GAC_PIBCAPN",
+      rotulo: "PIB per capita (R$ correntes)",
+      signal: opcoes.signal,
+    });
+    // O Ipea publica a série em milhares de reais; aqui ela é convertida para reais.
+    const recortados = pontos
+      .filter((ponto) => ponto.data >= PIB_PER_CAPITA_DESDE)
+      .map((ponto) => ({ data: ponto.data, valor: ponto.valor * 1000 }));
+    return montarSerie(pibPerCapita, recortados, URL_IPEA_PIB_PER_CAPITA);
+  },
+};
+
 export const INDICADORES_ECONOMIA: Indicador[] = [
   pibReal,
+  pibPerCapita,
   ipcaMensal,
   ipcaDozeMeses,
   selicMeta,
