@@ -1,5 +1,5 @@
 import type { Indicador } from "@/lib/indicadores/tipos";
-import { montarSerie } from "@/lib/indicadores/tipos";
+import { montarSerie, serieDoSnapshot } from "@/lib/indicadores/tipos";
 import { buscarIpea, buscarIpeaPorTerritorio, montarUrlIpea } from "@/lib/api/ipea";
 import { CODIGO_UF } from "@/lib/api/sidra";
 
@@ -55,12 +55,11 @@ export const INDICADORES_SOCIAL: Indicador[] = [
     codigo: "Ipea ADH_IDHM (Atlas do Desenvolvimento Humano)",
     consulta: "https://www.atlasbrasil.org.br/",
     normalizacoes: ["absoluto"],
-    // A série traz Brasil, as 27 UFs e os municípios numa chamada só; o recorte
-    // por UF alimenta o mapa e, sem UF, devolve o Brasil (TERCODIGO "0").
+    // O snapshot traz Brasil + 27 UFs, e alimenta o mapa e a série nacional.
     porUf: true,
-    serieEstadual: "ADH_IDHM",
-    async buscar({ uf, signal }) {
-      return seriePorTerritorio(this, "ADH_IDHM", uf, signal);
+    snapshot: "atlas-idhm.json",
+    async buscar({ uf }) {
+      return serieDoSnapshot(this, "atlas-idhm.json", uf);
     },
   },
   {
@@ -217,9 +216,9 @@ export const INDICADORES_SOCIAL: Indicador[] = [
     codigo: "Ipea ADH_PIND",
     consulta: "https://www.ipeadata.gov.br",
     normalizacoes: ["absoluto"],
-    async buscar({ signal }) {
-      // A série traz Brasil, estados e municípios juntos; o indicador é nacional.
-      return serieNacional(this, "ADH_PIND", signal, "0");
+    snapshot: "atlas-extrema-pobreza.json",
+    async buscar() {
+      return serieDoSnapshot(this, "atlas-extrema-pobreza.json");
     },
   },
 ];

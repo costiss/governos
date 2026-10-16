@@ -1,7 +1,6 @@
-import type { Serie, Unidade } from "@/lib/api/types";
-import { lerSnapshot, lerSnapshotPorUf, metadadosSnapshot } from "@/lib/api/snapshot";
+import type { Unidade } from "@/lib/api/types";
 import type { Indicador } from "@/lib/indicadores/tipos";
-import { montarSerie } from "@/lib/indicadores/tipos";
+import { serieDoSnapshot } from "@/lib/indicadores/tipos";
 
 /**
  * Segurança — mortes violentas.
@@ -44,20 +43,6 @@ const CONTAGEM: Unidade = {
   casas: 0,
 };
 
-/**
- * Série vinda do snapshot: nacional, ou o recorte de uma UF quando pedido.
- * Lança se o arquivo não existir — melhor falhar alto do que mostrar vazio.
- */
-function serieDoSnapshot(indicador: Indicador, arquivo: string, uf?: string): Serie {
-  const meta = metadadosSnapshot(arquivo);
-  if (!meta) {
-    throw new Error(
-      `Snapshot ausente: ${arquivo}. Rode \`pnpm series:sincronizar\` para gerá-lo.`,
-    );
-  }
-  const pontos = uf ? (lerSnapshotPorUf(arquivo).get(uf) ?? []) : lerSnapshot(arquivo);
-  return montarSerie(indicador, pontos, meta.url, { geradoEm: meta.geradoEm });
-}
 
 const taxaHomicidios: Indicador = {
   id: "taxa-homicidios",

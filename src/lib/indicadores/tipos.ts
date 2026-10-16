@@ -1,4 +1,5 @@
 import type { Categoria, Fonte, Frequencia, Normalizacao, Serie, Unidade } from "@/lib/api/types";
+import { lerSnapshot, lerSnapshotPorUf, metadadosSnapshot } from "@/lib/api/snapshot";
 
 /**
  * O contrato que todo indicador cumpre.
@@ -89,4 +90,25 @@ export function montarSerie(
     codigo: indicador.codigo,
     ...extras,
   };
+}
+
+/**
+ * Lê a série de um snapshot de build — nacional, ou o recorte de uma UF.
+ *
+ * Centraliza o que antes estava repetido em cada módulo, e falha ALTO quando o
+ * arquivo não existe: melhor um erro claro ("rode pnpm series:sincronizar") do
+ * que um gráfico vazio que parece ausência de dado.
+ */
+export function serieDoSnapshot(
+  indicador: Indicador,
+  arquivo: string,
+  uf?: string,
+  extras: { revisavel?: boolean } = {},
+): Serie {
+  const meta = metadadosSnapshot(arquivo);
+  if (!meta) {
+    throw new Error(`Snapshot ausente: ${arquivo}. Rode \`pnpm series:sincronizar\` para gerá-lo.`);
+  }
+  const pontos = uf ? (lerSnapshotPorUf(arquivo).get(uf) ?? []) : lerSnapshot(arquivo);
+  return montarSerie(indicador, pontos, meta.url, { geradoEm: meta.geradoEm, ...extras });
 }

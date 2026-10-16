@@ -109,6 +109,38 @@ const ORDEM: Record<string, number> = {
 
 const SEM_PREFERENCIA = 10_000;
 
+/**
+ * Séries que medem o MESMO conceito em outro período ou por outra fonte.
+ *
+ * A taxa de desocupação existe em três: PNAD antiga (1992–2014), PNAD Contínua
+ * (2012+) e o recorte por UF. Nenhuma cobre 1985 a hoje sozinha. Em vez de
+ * emendar metodologias diferentes num gráfico só — o que produziria um degrau
+ * disfarçado de fato —, o app mantém as séries separadas e liga uma à outra:
+ * quando a comparação escolhida não tem dado, a tela oferece as irmãs.
+ *
+ * Fica declarado aqui, e não em cada arquivo de categoria, pelo mesmo motivo da
+ * ordem editorial: é uma decisão editorial sobre o catálogo, não um atributo
+ * do dado.
+ */
+const ALTERNATIVAS: Record<string, string[]> = {
+  desocupacao: ["desocupacao-anual", "desocupacao-pnad", "desocupacao-uf"],
+  "desocupacao-anual": ["desocupacao", "desocupacao-pnad"],
+  "desocupacao-pnad": ["desocupacao", "desocupacao-anual"],
+  "desocupacao-uf": ["desocupacao"],
+
+  informalidade: ["informalidade-pnad"],
+  "informalidade-pnad": ["informalidade"],
+
+  "mortalidade-infantil": ["mortalidade-infantil-atlas"],
+  "mortalidade-infantil-atlas": ["mortalidade-infantil"],
+  "esperanca-de-vida": ["esperanca-de-vida-atlas"],
+  "esperanca-de-vida-atlas": ["esperanca-de-vida"],
+
+  "pobreza-300": ["pobreza-420", "pobreza-830"],
+  "pobreza-420": ["pobreza-300", "pobreza-830"],
+  "pobreza-830": ["pobreza-300", "pobreza-420"],
+};
+
 function posicao(indicador: Indicador): number {
   return ORDEM[indicador.id] ?? SEM_PREFERENCIA;
 }
@@ -132,12 +164,18 @@ function coletar(): Indicador[] {
     }
   }
 
-  return [...vistos.values()].sort((a, b) => {
-    const porCategoria = ORDEM_CATEGORIAS.indexOf(a.categoria) - ORDEM_CATEGORIAS.indexOf(b.categoria);
-    if (porCategoria !== 0) return porCategoria;
-    const porPosicao = posicao(a) - posicao(b);
-    return porPosicao !== 0 ? porPosicao : a.nome.localeCompare(b.nome, "pt-BR");
-  });
+  return [...vistos.values()]
+    .map((indicador) => {
+      const alternativas = ALTERNATIVAS[indicador.id];
+      return alternativas ? { ...indicador, alternativas } : indicador;
+    })
+    .sort((a, b) => {
+      const porCategoria =
+        ORDEM_CATEGORIAS.indexOf(a.categoria) - ORDEM_CATEGORIAS.indexOf(b.categoria);
+      if (porCategoria !== 0) return porCategoria;
+      const porPosicao = posicao(a) - posicao(b);
+      return porPosicao !== 0 ? porPosicao : a.nome.localeCompare(b.nome, "pt-BR");
+    });
 }
 
 export const INDICADORES: Indicador[] = coletar();

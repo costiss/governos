@@ -2,7 +2,7 @@ import type { Serie, Unidade } from "@/lib/api/types";
 import { buscarIpea, montarUrlIpea } from "@/lib/api/ipea";
 import { CODIGO_UF } from "@/lib/api/sidra";
 import type { Indicador } from "@/lib/indicadores/tipos";
-import { montarSerie } from "@/lib/indicadores/tipos";
+import { montarSerie, serieDoSnapshot } from "@/lib/indicadores/tipos";
 
 /**
  * Saúde.
@@ -135,9 +135,11 @@ export const INDICADORES_SAUDE: Indicador[] = [
     codigo: "Ipea ADH_MORT1",
     consulta: "https://www.atlasbrasil.org.br/",
     normalizacoes: ["absoluto"],
-    // Brasil = TERCODIGO "0"; sem o recorte, a chamada devolveria os 5.564 municípios.
-    async buscar({ signal }) {
-      return serieIpea(this, "ADH_MORT1", "0", signal);
+    // O Atlas devolve 16.776 linhas (os 5.564 municípios) para 3 anos
+    // censitários; o snapshot reduz a Brasil + UFs (~3 KB).
+    snapshot: "atlas-mortalidade-infantil.json",
+    async buscar() {
+      return serieDoSnapshot(this, "atlas-mortalidade-infantil.json");
     },
   },
   {
@@ -155,8 +157,9 @@ export const INDICADORES_SAUDE: Indicador[] = [
     codigo: "Ipea ADH_ESPVIDA",
     consulta: "https://www.atlasbrasil.org.br/",
     normalizacoes: ["absoluto"],
-    async buscar({ signal }) {
-      return serieIpea(this, "ADH_ESPVIDA", "0", signal);
+    snapshot: "atlas-esperanca-vida.json",
+    async buscar() {
+      return serieDoSnapshot(this, "atlas-esperanca-vida.json");
     },
   },
 ];

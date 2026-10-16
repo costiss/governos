@@ -130,7 +130,34 @@ async function capturarProdes() {
   return { url, fonte: "INPE — PRODES/TerraBrasilis", pontos };
 }
 
+/**
+ * Séries do Atlas do Desenvolvimento Humano (PNUD/Ipea/FJP).
+ *
+ * Cada uma entrega 16.776–22.379 linhas porque traz os 5.564 municípios — para
+ * render apenas Brasil + 27 UFs em 3 ou 4 anos censitários. São ~2,4 MB por
+ * indicador, ou ~15 MB no total, para cerca de 100 pontos úteis: 0,5% de
+ * aproveitamento. O snapshot reduz cada série a ~1 KB.
+ */
+const ATLAS = [
+  ["ADH_IDHM", "atlas-idhm.json", "IDH — Índice de Desenvolvimento Humano"],
+  ["ADH_T_ANALF15M", "atlas-analfabetismo.json", "Taxa de analfabetismo — 15 anos ou mais"],
+  ["ADH_ESPVIDA", "atlas-esperanca-vida.json", "Esperança de vida ao nascer"],
+  ["ADH_MORT1", "atlas-mortalidade-infantil.json", "Mortalidade infantil"],
+  ["ADH_T_FLFUND", "atlas-frequencia-fundamental.json", "Frequência ao ensino fundamental"],
+  ["ADH_PIND", "atlas-extrema-pobreza.json", "Extrema pobreza"],
+];
+
 const SERIES = [
+  ...ATLAS.map(([codigo, arquivo, descricao]) => ({
+    arquivo,
+    descricao,
+    motivo: "série do Atlas traz 5.564 municípios (~2,4 MB) para 3 anos censitários",
+    capturar: () =>
+      capturarIpea({
+        codigo,
+        niveis: ["brasil", "uf"],
+      }),
+  })),
   {
     arquivo: "homicidios-uf.json",
     descricao: "Taxa de homicídios por 100 mil habitantes — Brasil e UFs",

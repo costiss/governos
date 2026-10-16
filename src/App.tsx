@@ -1,4 +1,5 @@
 import { AppHeader } from "@/components/hud/AppHeader";
+import { Fronteira } from "@/components/hud/Fronteira";
 import { Segmentado } from "@/components/hud/Segmentado";
 import { useHashRoute } from "@/hooks/useHashRoute";
 import { useTema } from "@/hooks/useTema";
@@ -39,9 +40,11 @@ export function App() {
       />
 
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-4 sm:px-6 sm:py-6">
-        {nome === "comparar" && <CompareView />}
-        {nome === "mapa" && <MapaView />}
-        {nome === "geral" && <OverviewView />}
+        <Fronteira>
+          {nome === "comparar" && <CompareView />}
+          {nome === "mapa" && <MapaView />}
+          {nome === "geral" && <OverviewView />}
+        </Fronteira>
       </main>
 
       <Rodape />

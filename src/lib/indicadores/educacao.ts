@@ -1,6 +1,6 @@
 import { buscarIpea, buscarIpeaPorTerritorio, montarUrlIpea } from "@/lib/api/ipea";
 import { CODIGO_UF } from "@/lib/api/sidra";
-import { montarSerie } from "@/lib/indicadores/tipos";
+import { montarSerie, serieDoSnapshot} from "@/lib/indicadores/tipos";
 import type { Normalizacao, Unidade } from "@/lib/api/types";
 import type { Indicador } from "@/lib/indicadores/tipos";
 
@@ -69,16 +69,10 @@ const analfabetismo: Indicador = {
   codigo: "IPEADATA ADH_T_ANALF15M",
   consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=2096726409",
   normalizacoes: PCT_VALOR,
-  buscar: async ({ signal }) => {
-    // TERCODIGO "0" = Brasil; sem o filtro, a série misturaria os ~5.500 municípios.
-    const pontos = await buscarIpea({
-      codigo: "ADH_T_ANALF15M",
-      rotulo: "taxa de analfabetismo (Censo)",
-      territorio: "0",
-      signal,
-    });
-    return montarSerie(analfabetismo, pontos, montarUrlIpea("ADH_T_ANALF15M"));
-  },
+  // A série do Atlas entrega 22.379 linhas (os 5.564 municípios) para render
+  // Brasil + 27 UFs em 4 anos censitários. O snapshot reduz a ~4 KB.
+  snapshot: "atlas-analfabetismo.json",
+  buscar: async () => serieDoSnapshot(analfabetismo, "atlas-analfabetismo.json"),
 };
 
 /**
@@ -208,15 +202,9 @@ const frequenciaFundamental: Indicador = {
   codigo: "IPEADATA ADH_T_FLFUND",
   consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=2096726416",
   normalizacoes: PCT_VALOR,
-  buscar: async ({ signal }) => {
-    const pontos = await buscarIpea({
-      codigo: "ADH_T_FLFUND",
-      rotulo: "frequência líquida ao ensino fundamental (Censo)",
-      territorio: "0",
-      signal,
-    });
-    return montarSerie(frequenciaFundamental, pontos, montarUrlIpea("ADH_T_FLFUND"));
-  },
+  snapshot: "atlas-frequencia-fundamental.json",
+  buscar: async () =>
+    serieDoSnapshot(frequenciaFundamental, "atlas-frequencia-fundamental.json"),
 };
 
 export const INDICADORES_EDUCACAO: Indicador[] = [

@@ -1,7 +1,6 @@
 import type { Unidade } from "@/lib/api/types";
-import { lerSnapshot, metadadosSnapshot } from "@/lib/api/snapshot";
 import type { Indicador } from "@/lib/indicadores/tipos";
-import { montarSerie } from "@/lib/indicadores/tipos";
+import { serieDoSnapshot } from "@/lib/indicadores/tipos";
 
 /**
  * Meio ambiente — desmatamento.
@@ -63,14 +62,8 @@ const desmatamentoAmazonia: Indicador = {
   normalizacoes: ["absoluto", "base100"],
   snapshot: ARQUIVO,
   async buscar() {
-    const meta = metadadosSnapshot(ARQUIVO);
-    if (!meta) {
-      throw new Error(`Snapshot ausente: ${ARQUIVO}. Rode \`pnpm series:sincronizar\`.`);
-    }
-    return montarSerie(desmatamentoAmazonia, lerSnapshot(ARQUIVO), meta.url, {
-      revisavel: true,
-      geradoEm: meta.geradoEm,
-    });
+    // O último período do PRODES ainda é estimativa e pode ser consolidado.
+    return serieDoSnapshot(desmatamentoAmazonia, ARQUIVO, undefined, { revisavel: true });
   },
 };
 

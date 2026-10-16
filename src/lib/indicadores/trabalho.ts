@@ -133,8 +133,8 @@ function indicador(def: DefinicaoIpea): Indicador {
 export const INDICADORES_TRABALHO: Indicador[] = [
   indicador({
     id: "desocupacao",
-    nome: "Taxa de desocupação",
-    curto: "Desocupação",
+    nome: "Taxa de desemprego (desocupação)",
+    curto: "Desemprego",
     descricao:
       "Percentual de pessoas de 14 anos ou mais desocupadas (que procuraram trabalho e não encontraram) em relação à força de trabalho, na semana de referência — PNAD Contínua (IBGE). Cada ponto é o trimestre móvel encerrado no mês indicado.",
     unidade: percentual("taxa de desocupação"),
