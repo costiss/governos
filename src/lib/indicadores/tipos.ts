@@ -99,16 +99,16 @@ export function montarSerie(
  * arquivo não existe: melhor um erro claro ("rode pnpm series:sincronizar") do
  * que um gráfico vazio que parece ausência de dado.
  */
-export function serieDoSnapshot(
+export async function serieDoSnapshot(
   indicador: Indicador,
   arquivo: string,
   uf?: string,
   extras: { revisavel?: boolean } = {},
-): Serie {
-  const meta = metadadosSnapshot(arquivo);
+): Promise<Serie> {
+  const meta = await metadadosSnapshot(arquivo);
   if (!meta) {
     throw new Error(`Snapshot ausente: ${arquivo}. Rode \`pnpm series:sincronizar\` para gerá-lo.`);
   }
-  const pontos = uf ? (lerSnapshotPorUf(arquivo).get(uf) ?? []) : lerSnapshot(arquivo);
+  const pontos = uf ? ((await lerSnapshotPorUf(arquivo)).get(uf) ?? []) : await lerSnapshot(arquivo);
   return montarSerie(indicador, pontos, meta.url, { geradoEm: meta.geradoEm, ...extras });
 }

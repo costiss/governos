@@ -62,6 +62,10 @@ pnpm series:sincronizar
 O snapshot grava a data da coleta e a URL de origem, e o app mostra as duas na ficha de
 procedência — snapshot sem carimbo de data é dado sem procedência.
 
+Os arquivos são **carregados sob demanda**: cada um vira um chunk próprio, buscado só
+quando o indicador que depende dele é aberto. Os 248 KB de dados não entram no bundle
+inicial de quem só quer ver o IPCA.
+
 O resultado: abrir o app em um computador novo custa algumas dezenas de requisições, e
 nenhuma nas aberturas seguintes.
 
