@@ -1,77 +1,57 @@
 #!/usr/bin/env node
 /**
- * Sincroniza as séries que são grandes demais para o navegador baixar.
+ * Sincroniza as séries que o NAVEGADOR não consegue buscar.
  *
- * PROBLEMA
- *   Algumas séries do Ipea Data misturam Brasil, as 27 UFs e os 5.570
- *   municípios numa resposta só — e o serviço OData IGNORA `$top`, `$skip` e
- *   `$filter` (testado: devolve os mesmos ~70 MB de qualquer jeito). Buscar
- *   isso pelo navegador significaria ~70 MB por visitante, que é exatamente o
- *   abuso que este app existe para evitar.
+ * DOIS MOTIVOS, O MESMO REMÉDIO
  *
- * SOLUÇÃO
- *   Buscar UMA vez, aqui, filtrar para Brasil + UFs, e gravar um JSON de poucos
- *   KB em `src/lib/indicadores/dados/`. O app lê o arquivo: zero requisições em
- *   runtime, e o dado continua sendo oficial — só que colhido no build.
+ *   1. Tamanho — algumas séries do Ipea Data misturam Brasil, as 27 UFs e os
+ *      5.570 municípios numa resposta só, e o serviço OData IGNORA `$top`,
+ *      `$skip` e `$filter` (testado: devolve os mesmos ~70 MB de qualquer
+ *      jeito). Buscar isso pelo navegador seriam ~70 MB por visitante.
+ *
+ *   2. CORS — o painel do PRODES (INPE) serve o JSON do desmatamento sem
+ *      `Access-Control-Allow-Origin`. `curl` funciona; o navegador não. Não há
+ *      proxy no app por decisão de arquitetura, então o dado é colhido aqui.
+ *
+ * O QUE SAI DAQUI
+ *   JSON de poucos KB em `src/lib/indicadores/dados/`, com o carimbo de coleta
+ *   e a URL de origem. Em runtime o app lê o arquivo: zero requisições.
+ *   A interface mostra a data e a origem — snapshot sem carimbo de data é dado
+ *   sem procedência.
  *
  * USO
- *   node scripts/series-grandes.mjs            # atualiza o que estiver vencido
- *   node scripts/series-grandes.mjs --forcar    # refaz tudo
- *
- * O arquivo gerado registra a data de coleta e a URL exata, e o app mostra
- * ambos na ficha de procedência. Snapshot sem carimbo de data é dado sem
- * procedência.
+ *   pnpm series:sincronizar            # atualiza o que estiver vencido
+ *   node scripts/series-grandes.mjs --forcar
  */
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const DESTINO = resolve(AQUI, "../src/lib/indicadores/dados");
 
-const BASE_IPE = "https://www.ipeadata.gov.br/api/odata4";
+const BASE_IPEA = "https://www.ipeadata.gov.br/api/odata4";
+const BASE_PRODES = "https://terrabrasilis.dpi.inpe.br/app/prodes/dashboard/deforestation/files";
 
-/** Séries a capturar, e a que nível territorial reduzir. */
-const SERIES = [
-  {
-    codigo: "AVIOL12_THOMIC",
-    arquivo: "homicidios-uf.json",
-    descricao: "Taxa de homicídios por 100 mil habitantes — Brasil e UFs",
-    niveis: ["brasil", "uf"],
-  },
-  {
-    codigo: "AVIOL12_HOMIC",
-    arquivo: "homicidios-absoluto-uf.json",
-    descricao: "Número de homicídios — Brasil e UFs",
-    niveis: ["brasil", "uf"],
-  },
-];
-
-const FORCAR = process.argv.includes("--forcar");
-/** Um snapshot vale por 180 dias: a série é anual e publicada com atraso. */
+/** Um snapshot vale por 180 dias: as séries são anuais e saem com atraso. */
 const VALIDADE_DIAS = 180;
+const FORCAR = process.argv.includes("--forcar");
 
-function casarNivel(codigo, nivel) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Fontes
+// ─────────────────────────────────────────────────────────────────────────────
+
+const casarNivel = (codigo, nivel) => {
   if (nivel === "brasil") return codigo === "0" || codigo === "1" || codigo === "";
   if (nivel === "uf") return /^\d{2}$/.test(codigo);
   return /^\d{7}$/.test(codigo);
-}
+};
 
-async function contarPontos(arquivo) {
-  try {
-    const bruto = await import(`node:fs/promises`).then((fs) => fs.readFile(arquivo, "utf8"));
-    const json = JSON.parse(bruto);
-    const idade = (Date.now() - Date.parse(json.geradoEm)) / 86_400_000;
-    return { pontos: json.pontos.length, idade, vencido: idade > VALIDADE_DIAS };
-  } catch {
-    return null;
-  }
-}
-
-async function capturar(serie) {
-  const url = `${BASE_IPE}/ValoresSerie(SERCODIGO='${serie.codigo}')`;
-  process.stdout.write(`  baixando ${serie.codigo} (pode passar de 60 MB)… `);
+/** Ipea Data: uma SERCODIGO inteira, reduzida a Brasil + UFs. */
+async function capturarIpea(serie) {
+  const url = `${BASE_IPEA}/ValoresSerie(SERCODIGO='${serie.codigo}')`;
+  process.stdout.write(`  baixando ${serie.codigo} (chega a passar de 60 MB)… `);
   const inicio = Date.now();
 
   const resposta = await fetch(url, { headers: { Accept: "application/json" } });
@@ -87,48 +67,133 @@ async function capturar(serie) {
     if (!Number.isFinite(numero)) continue;
     const data = String(valor.VALDATA ?? "").slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) continue;
-    // "0"/"1"/"" é o Brasil; os demais são a UF pelo código de 2 dígitos.
     pontos.push({
       d: data,
       u: /^\d{2}$/.test(territorio) ? territorio : undefined,
       v: Math.round(numero * 1e6) / 1e6,
     });
   }
-
   pontos.sort((a, b) => a.d.localeCompare(b.d) || (a.u ?? "").localeCompare(b.u ?? ""));
 
-  const segundos = ((Date.now() - inicio) / 1000).toFixed(1);
-  console.log(`${valores.length} recebidos → ${pontos.length} guardados em ${segundos}s`);
+  console.log(
+    `${valores.length} recebidos → ${pontos.length} guardados em ${((Date.now() - inicio) / 1000).toFixed(1)}s`,
+  );
+  return { url, fonte: "Ipea Data", pontos };
+}
 
-  return {
-    codigo: serie.codigo,
-    descricao: serie.descricao,
-    fonte: "Ipea Data",
-    url,
-    geradoEm: new Date().toISOString(),
-    pontos,
-  };
+/**
+ * PRODES (INPE): o JSON do painel traz um período por ano do PRODES
+ * (agosto–julho, rotulado pelo ano de encerramento), e cada período traz as
+ * áreas por estado da Amazônia Legal. A taxa nacional é a soma.
+ */
+async function capturarProdes() {
+  let arquivo = null;
+  let url = "";
+  // O nome do arquivo carrega o ano corrente; recuamos até achar um que exista.
+  for (let ano = new Date().getUTCFullYear() + 1; ano >= 2020; ano -= 1) {
+    const candidato = `${BASE_PRODES}/rates${ano}.json`;
+    process.stdout.write(`  tentando rates${ano}.json… `);
+    const resposta = await fetch(candidato, { headers: { Accept: "application/json" } });
+    if (resposta.ok) {
+      arquivo = await resposta.json();
+      url = candidato;
+      console.log("ok");
+      break;
+    }
+    console.log(`HTTP ${resposta.status}`);
+  }
+  if (!arquivo) throw new Error("nenhum rates<ano>.json respondeu");
+
+  const pontos = [];
+  for (const periodo of arquivo.periods ?? []) {
+    const ano = periodo?.endDate?.year;
+    if (typeof ano !== "number") continue;
+    let total = 0;
+    for (const feature of periodo.features ?? []) {
+      for (const area of feature.areas ?? []) {
+        if (typeof area?.area === "number") total += area.area;
+      }
+    }
+    if (total > 0) pontos.push({ d: `${ano}-01-01`, v: total });
+  }
+  pontos.sort((a, b) => a.d.localeCompare(b.d));
+
+  console.log(
+    `  ${arquivo.periods?.length ?? 0} períodos → ${pontos.length} anos (${pontos[0]?.d.slice(0, 4)}–${pontos.at(-1)?.d.slice(0, 4)})`,
+  );
+  return { url, fonte: "INPE — PRODES/TerraBrasilis", pontos };
+}
+
+const SERIES = [
+  {
+    arquivo: "homicidios-uf.json",
+    descricao: "Taxa de homicídios por 100 mil habitantes — Brasil e UFs",
+    motivo: "Ipea devolve ~70 MB e ignora $top/$filter",
+    capturar: () =>
+      capturarIpea({
+        codigo: "AVIOL12_THOMIC",
+        niveis: ["brasil", "uf"],
+      }),
+  },
+  {
+    arquivo: "homicidios-absoluto-uf.json",
+    descricao: "Número de homicídios — Brasil e UFs",
+    motivo: "Ipea devolve ~65 MB e ignora $top/$filter",
+    capturar: () =>
+      capturarIpea({
+        codigo: "AVIOL12_HOMIC",
+        niveis: ["brasil", "uf"],
+      }),
+  },
+  {
+    arquivo: "desmatamento-amazonia.json",
+    descricao: "Desmatamento na Amazônia Legal — PRODES",
+    motivo: "o TerraBrasilis não envia Access-Control-Allow-Origin",
+    capturar: capturarProdes,
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function estadoAtual(arquivo) {
+  try {
+    const json = JSON.parse(await readFile(resolve(DESTINO, arquivo), "utf8"));
+    const idade = (Date.now() - Date.parse(json.geradoEm)) / 86_400_000;
+    return { pontos: json.pontos.length, idade, vencido: idade > VALIDADE_DIAS };
+  } catch {
+    return null;
+  }
 }
 
 async function principal() {
   await mkdir(DESTINO, { recursive: true });
-  console.log(`Séries grandes → ${DESTINO}\n`);
+  console.log(`Séries que o navegador não busca → ${DESTINO}\n`);
   let atualizados = 0;
 
   for (const serie of SERIES) {
-    const arquivo = resolve(DESTINO, serie.arquivo);
-    const atual = await contarPontos(arquivo);
+    const atual = await estadoAtual(serie.arquivo);
 
     if (!FORCAR && atual && !atual.vencido) {
-      console.log(`  ${serie.arquivo}: em dia (${atual.pontos} pontos, ${atual.idade.toFixed(0)} dias)`);
+      console.log(
+        `  ${serie.arquivo}: em dia (${atual.pontos} pontos, ${atual.idade.toFixed(0)} dias)\n`,
+      );
       continue;
     }
 
+    console.log(`  ${serie.arquivo} — ${serie.motivo}`);
     try {
-      const conteudo = await capturar(serie);
-      await writeFile(arquivo, JSON.stringify(conteudo), "utf8");
-      const kb = (JSON.stringify(conteudo).length / 1024).toFixed(0);
-      console.log(`  ${serie.arquivo}: gravado (${kb} KB)\n`);
+      const { url, fonte, pontos } = await serie.capturar();
+      const conteudo = {
+        descricao: serie.descricao,
+        fonte,
+        motivo: serie.motivo,
+        url,
+        geradoEm: new Date().toISOString(),
+        pontos,
+      };
+      const texto = JSON.stringify(conteudo);
+      await writeFile(resolve(DESTINO, serie.arquivo), texto, "utf8");
+      console.log(`  ${serie.arquivo}: gravado (${(texto.length / 1024).toFixed(0)} KB)\n`);
       atualizados += 1;
     } catch (erro) {
       console.error(`  ${serie.arquivo}: FALHOU — ${erro.message}\n`);

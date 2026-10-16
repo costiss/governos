@@ -7,8 +7,7 @@ import { useEstados } from "@/hooks/useSerie";
 import type { Ponto } from "@/lib/api/types";
 import { formatarValor } from "@/lib/format";
 import { INDICADORES_MAPEAVEIS, indicadorPorId } from "@/lib/indicadores";
-import { UF_POR_CODIGO } from "@/lib/api/sidra";
-import { UFS, nomeDaUf } from "@/lib/uf";
+import { UFS, nomeDaUf, normalizarSigla } from "@/lib/uf";
 import { cn } from "@/lib/utils";
 
 /**
@@ -28,12 +27,12 @@ export function MapaView() {
 
   const { data, isPending, error } = useEstados(escolhido);
 
-  /** Converte o mapa código-do-território → série, para os códigos do IBGE. */
+  /** Converte as chaves do provedor (código IBGE ou sigla) para sigla de UF. */
   const porUf = useMemo(() => {
     if (!data) return {} as Record<string, Ponto[]>;
     const saida: Record<string, Ponto[]> = {};
     for (const [territorio, pontos] of data.entries()) {
-      const uf = UF_POR_CODIGO[territorio] ?? UF_POR_CODIGO[territorio.slice(0, 2)];
+      const uf = normalizarSigla(territorio);
       if (uf) saida[uf] = pontos;
     }
     return saida;

@@ -1,5 +1,7 @@
 /** As 27 unidades da federação, na ordem do IBGE. */
 
+import { UF_POR_CODIGO } from "@/lib/api/sidra";
+
 export type Regiao = "Norte" | "Nordeste" | "Centro-Oeste" | "Sudeste" | "Sul";
 
 export interface Uf {
@@ -55,4 +57,23 @@ export function ufPorSigla(sigla: string): Uf | undefined {
 
 export function nomeDaUf(sigla: string | undefined): string {
   return sigla ? (porSigla.get(sigla)?.nome ?? sigla) : "Brasil";
+}
+
+/**
+ * Aceita as duas formas em que uma UF chega de um provedor — o código do IBGE
+ * ("35") ou a sigla ("SP") — e devolve sempre a sigla.
+ *
+ * As origens divergem: o SIDRA entrega códigos, o Ipea entrega códigos em
+ * `TERCODIGO`, e os snapshots já trazem siglas. Normalizar num ponto só evita
+ * que cada tela redescubra a convenção — e foi exatamente esse desencontro que
+ * deixou o mapa de homicídios vazio.
+ */
+export function normalizarSigla(chave: string | undefined): string | undefined {
+  if (!chave) return undefined;
+  const limpo = chave.trim().toUpperCase();
+  if (porSigla.has(limpo)) return limpo;
+  if (/^\d+$/.test(limpo)) {
+    return UF_POR_CODIGO[limpo] ?? UF_POR_CODIGO[limpo.slice(0, 2)];
+  }
+  return undefined;
 }
