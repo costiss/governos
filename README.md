@@ -185,7 +185,9 @@ quando o gráfico aparece — o que pesa de verdade num celular.
 
 ## Catálogo
 
-38 indicadores em 7 categorias, de 1971 a 2026 conforme a série. Cada um traz
+54 indicadores em 7 categorias, de 1953 a 2026 conforme a série. Cada um traz
 fonte, código de origem e URL conferível; a série inteira é plotada, sem recorte
 editorial, e a régua de mandatos mostra em que governo cada trecho caiu.
+
+10 deles têm recorte por unidade da federação e alimentam o **Mapa**.
 
