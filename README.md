@@ -190,41 +190,39 @@ um toque.
 
 ## Publicar
 
-A aplicação é um SPA estático — o build roda dentro da imagem, e o runtime é só um
-nginx servindo arquivos. **Nenhuma variável de ambiente, nenhuma chave, nenhum backend.**
+SPA estático: o build roda na imagem, o runtime só entrega arquivos. **Sem backend, sem
+variável de ambiente, sem chave.** São dois arquivos — `Dockerfile` e
+`docker/default.conf` — e o `default.conf` tem 20 linhas.
 
 ```bash
 docker build -t republica .
-docker run --rm -p 8080:8080 republica      # http://localhost:8080
-
-# ou
-docker compose up --build
+docker run --rm -p 8080:80 republica      # http://localhost:8080
 ```
 
-### O que a imagem faz
+### Nenhuma requisição passa pelo seu servidor
 
-- **Build hermético.** Os 12 snapshots de dados vêm versionados no repositório, então a
-  etapa de build **não acessa a rede**. O resultado é reprodutível e funciona atrás de
-  firewall.
-- **Roda sem root.** O processo é o usuário `nginx` (UID 101) e escuta na **8080** —
-  porta que não exige privilégio. Em plataformas atrás de proxy reverso (Traefik,
-  Cloudflare, Dokploy), aponte para 8080.
-- **Cache correto.** Assets com hash no nome são imutáveis por um ano; o `index.html`
-  nunca é cacheado. Uma versão velha do HTML prenderia o visitante numa build antiga.
-- **CSP restritiva.** `connect-src` lista exatamente os três órgãos que o navegador
-  consulta — SIDRA, Ipea e Banco Central. O INPE não aparece porque o desmatamento vem
-  de snapshot. Se você adicionar um indicador de uma fonte nova, **precisa acrescentar o
-  host** em `docker/nginx.conf`, senão a requisição é bloqueada.
-- **Logs no `docker logs`** e `HEALTHCHECK` embutido.
+O navegador chama as APIs dos órgãos **direto**. Não há proxy, nem rota de API, nem
+código de servidor no projeto — o nginx só serve `index.html` e os assets.
 
-### Arquivos
+Isso é possível porque as três fontes usadas enviam `Access-Control-Allow-Origin: *`:
 
-| Arquivo | Papel |
+| Órgão | Host |
 | --- | --- |
-| `Dockerfile` | build multi-estágio: Node 24 + pnpm → nginx |
-| `docker/nginx.conf` | servidor, cache, gzip, cabeçalhos e CSP |
-| `docker-compose.yml` | atalho, com a porta ligada só ao host local por padrão |
-| `.dockerignore` | mantém `node_modules`, `dist` e `.git` fora do contexto |
+| IBGE — SIDRA | `apisidra.ibge.gov.br` |
+| Ipea Data | `www.ipeadata.gov.br` |
+| Banco Central — SGS | `api.bcb.gov.br` |
+
+O INPE/PRODES **não** envia CORS — por isso o desmatamento vem de snapshot embarcado no
+build, e não de rede.
+
+### O que o `default.conf` faz
+
+Só duas coisas além do básico: **cache** (assets com hash imutáveis por um ano;
+`index.html` nunca cacheado, senão o visitante fica preso numa build antiga) e **gzip**.
+
+Ficaram de fora, de propósito: CSP, cabeçalhos de segurança extras, usuário sem
+privilégio, log formatado e healthcheck. Se quiser algum deles depois, o `default.conf`
+é o lugar — mas nenhum é necessário para publicar.
 
 ---
 

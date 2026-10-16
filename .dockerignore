@@ -1,32 +1,11 @@
-# A aplicação é um SPA estático: o build roda inteiro dentro da imagem.
-# Os snapshots de dados vêm versionados no repositório, então o build não
-# precisa de rede.
-
-# Dependências: instaladas na imagem a partir do lockfile.
 node_modules
 **/node_modules
-
-# Artefatos locais — o build acontece dentro do container.
 dist
-dist-ssr
-
-# Worktrees de desenvolvimento.
 .worktrees
-
-# Histórico do git e configuração local.
 .git
-.gitignore
-.gitattributes
-
-# Ambiente do editor e do agente.
-.vscode
-.idea
 .interface-design
 .agents
 .claude
-
-# Ruído.
 *.log
 *.tsbuildinfo
 .DS_Store
-.vite
