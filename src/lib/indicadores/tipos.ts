@@ -43,6 +43,12 @@ export interface Indicador {
   normalizacoes: Normalizacao[];
   /** Aceita recorte por UF (alimenta o mapa). */
   porUf?: boolean;
+  /**
+   * Código da série ESTADUAL no provedor, quando o recorte por UF vem numa única
+   * chamada (Ipea, campo `TERCODIGO`). Sem isto, alimentar o mapa custaria 27
+   * requisições — e a cortesia com a API pública vem primeiro.
+   */
+  serieEstadual?: string;
   buscar: (opcoes: OpcoesBusca) => Promise<Serie>;
 }
 

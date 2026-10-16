@@ -3,11 +3,13 @@ import { Segmentado } from "@/components/hud/Segmentado";
 import { useHashRoute } from "@/hooks/useHashRoute";
 import { useTema } from "@/hooks/useTema";
 import { CompareView } from "@/views/CompareView";
+import { MapaView } from "@/views/MapaView";
 import { OverviewView } from "@/views/OverviewView";
 
 const VISOES = [
   { valor: "geral", rotulo: "Visão geral" },
   { valor: "comparar", rotulo: "Comparar" },
+  { valor: "mapa", rotulo: "Mapa" },
 ] as const;
 
 type NomeVisao = (typeof VISOES)[number]["valor"];
@@ -36,11 +38,9 @@ export function App() {
       />
 
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-4 sm:px-6 sm:py-6">
-        {nome === "comparar" ? (
-          <CompareView params={rota.params} />
-        ) : (
-          <OverviewView params={rota.params} />
-        )}
+        {nome === "comparar" && <CompareView />}
+        {nome === "mapa" && <MapaView />}
+        {nome === "geral" && <OverviewView />}
       </main>
 
       <Rodape />
