@@ -1,5 +1,5 @@
 import type { Ponto } from "@/lib/api/types";
-import { mesesEntre } from "@/lib/governos";
+import { mesesDeMandato } from "@/lib/governos";
 import type { Governo } from "@/lib/governos";
 
 /**
@@ -205,12 +205,21 @@ export interface PontoMandato {
   valor: number;
 }
 
+/** Diferença em meses, SEM saturar em zero — negativa para datas anteriores. */
+function diferencaMeses(de: Date, ate: Date): number {
+  return (ate.getUTCFullYear() - de.getUTCFullYear()) * 12 + (ate.getUTCMonth() - de.getUTCMonth());
+}
+
 /**
  * Reindexa uma série pelo tempo de mandato.
  *
  * É isso que permite sobrepor "Lula I" e "Bolsonaro" no mesmo gráfico: o eixo x
  * deixa de ser o calendário e passa a ser "mês 1, mês 2, … posse a posse".
  * Dois mandatos de durações diferentes ficam comparáveis ponto a ponto.
+ *
+ * O ponto anterior à posse é DESCARTADO, e para isso a diferença de meses
+ * precisa ser calculada sem saturação — `mesesEntre` trava em zero, o que faria
+ * todo o histórico anterior ao mandato se acumular no mês da posse.
  */
 export function alinharPorMandato(
   pontos: Ponto[],
@@ -218,10 +227,9 @@ export function alinharPorMandato(
   referencia: Date = new Date(),
 ): PontoMandato[] {
   const inicio = paraData(governo.inicio);
-  const fim = governo.fim ? paraData(governo.fim) : referencia;
-  const limite = Math.max(1, mesesEntre(inicio, fim));
+  const limite = Math.max(1, mesesDeMandato(governo, referencia));
   return pontos.flatMap((ponto) => {
-    const mes = mesesEntre(inicio, paraData(ponto.data));
+    const mes = diferencaMeses(inicio, paraData(ponto.data));
     if (mes < 0 || mes > limite) return [];
     return [{ mes, data: ponto.data, valor: ponto.valor }];
   });

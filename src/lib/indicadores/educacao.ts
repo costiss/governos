@@ -105,6 +105,7 @@ const analfabetismoUf: Indicador = {
   consulta: "https://www.ipeadata.gov.br/ExibeSerie.aspx?serid=2096726941",
   normalizacoes: PCT_VALOR,
   porUf: true,
+  serieEstadual: "PNADCA_TXA15MUF",
   buscar: async ({ uf, signal }) => {
     const porTerritorio = await buscarIpeaPorTerritorio({
       codigo: "PNADCA_TXA15MUF",

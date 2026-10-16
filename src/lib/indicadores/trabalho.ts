@@ -93,6 +93,10 @@ function indicador(def: DefinicaoIpea): Indicador {
     consulta,
     normalizacoes: def.normalizacoes,
     ...(def.porUf ? { porUf: true } : {}),
+    // A MESMA série estadual alimenta o mapa: uma chamada só, filtrada por
+    // nível no adapter. Sem isto o indicador aceita recorte por UF mas o mapa
+    // não o enxerga.
+    ...(def.porUf ? { serieEstadual: def.series } : {}),
     buscar: async (opcoes: OpcoesBusca): Promise<Serie> => {
       // Nas séries estaduais o território "0" é o agregado Brasil.
       const codigoUf = opcoes.uf ? CODIGO_UF[opcoes.uf] : undefined;

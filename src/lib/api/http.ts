@@ -103,12 +103,32 @@ export class ErroHttp extends Error {
   }
 }
 
+/**
+ * Prazo padrão por tentativa.
+ *
+ * Não é paranoia: o SGS do Banco Central trava ~30 s em algumas janelas antes de
+ * estourar o próprio timeout — e a página de erro dele sai SEM o cabeçalho
+ * CORS, o que o navegador reporta como bloqueio de CORS. Sem prazo aqui, cada
+ * tentativa espera os 30 s, e três tentativas por fatia viram minutos de tela
+ * carregando. Com prazo, a tentativa morre cedo e a repetição costuma pegar o
+ * dado já aquecido no servidor.
+ */
+const PRAZO_PADRAO_MS = 12_000;
+
+/** Combina o sinal do chamador com um prazo. O do chamador manda: é cancelamento. */
+function sinalComPrazo(signal: AbortSignal | undefined, ms: number): AbortSignal {
+  const prazo = AbortSignal.timeout(ms);
+  return signal ? AbortSignal.any([signal, prazo]) : prazo;
+}
+
 export interface OpcoesRequisicao {
   /** Identificador do recurso para diagnóstico e mensagens de erro. */
   rotulo?: string;
   signal?: AbortSignal;
   headers?: Record<string, string>;
   tentativas?: number;
+  /** Prazo por tentativa, em ms. */
+  prazoMs?: number;
 }
 
 /**
@@ -116,7 +136,7 @@ export interface OpcoesRequisicao {
  * transitória com backoff exponencial e respeita `Retry-After` em 429/503.
  */
 export async function buscarJson<T>(url: string, opcoes: OpcoesRequisicao = {}): Promise<T> {
-  const { rotulo = url, signal, headers, tentativas = 3 } = opcoes;
+  const { rotulo = url, signal, headers, tentativas = 3, prazoMs = PRAZO_PADRAO_MS } = opcoes;
   const host = new URL(url).host;
   let ultimoErro: unknown;
 
@@ -126,7 +146,7 @@ export async function buscarJson<T>(url: string, opcoes: OpcoesRequisicao = {}):
     await aguardarVez(host);
     try {
       const resposta = await fetch(url, {
-        signal,
+        signal: sinalComPrazo(signal, prazoMs),
         headers: { Accept: "application/json", ...headers },
       });
 
@@ -150,6 +170,8 @@ export async function buscarJson<T>(url: string, opcoes: OpcoesRequisicao = {}):
 
       return (await resposta.json()) as T;
     } catch (erro) {
+      // Cancelamento pelo chamador é definitivo; estouro de prazo é transitório.
+      if (signal?.aborted) throw new DOMException("Requisição cancelada", "AbortError");
       if (erro instanceof DOMException && erro.name === "AbortError") throw erro;
 
       // Erro definitivo do cliente: não gastar tentativas.
@@ -173,7 +195,7 @@ export async function buscarJson<T>(url: string, opcoes: OpcoesRequisicao = {}):
 
 /** Busca um recurso textual com o mesmo tratamento (útil para XML/SVG do IBGE). */
 export async function buscarTexto(url: string, opcoes: OpcoesRequisicao = {}): Promise<string> {
-  const { rotulo = url, signal, headers, tentativas = 3 } = opcoes;
+  const { rotulo = url, signal, headers, tentativas = 3, prazoMs = PRAZO_PADRAO_MS } = opcoes;
   const host = new URL(url).host;
   let ultimoErro: unknown;
 
@@ -181,7 +203,7 @@ export async function buscarTexto(url: string, opcoes: OpcoesRequisicao = {}): P
     if (signal?.aborted) throw new DOMException("Requisição cancelada", "AbortError");
     await aguardarVez(host);
     try {
-      const resposta = await fetch(url, { signal, headers });
+      const resposta = await fetch(url, { signal: sinalComPrazo(signal, prazoMs), headers });
       if (!resposta.ok) {
         if (resposta.status === 429 || resposta.status === 503) {
           pausarHost(host, lerRetryAfter(resposta));
@@ -190,6 +212,7 @@ export async function buscarTexto(url: string, opcoes: OpcoesRequisicao = {}): P
       }
       return await resposta.text();
     } catch (erro) {
+      if (signal?.aborted) throw new DOMException("Requisição cancelada", "AbortError");
       if (erro instanceof DOMException && erro.name === "AbortError") throw erro;
       if (erro instanceof ErroHttp && erro.status >= 400 && erro.status < 500 && erro.status !== 429) {
         throw erro;

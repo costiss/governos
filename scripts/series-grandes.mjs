@@ -42,8 +42,14 @@ const FORCAR = process.argv.includes("--forcar");
 // Fontes
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Só o código "0" é o Brasil. O Ipea usa "1" para o agregado de REGIÕES e
+ * "2"–"5" para as cinco regiões — todos de um dígito, e todos distintos do
+ * Brasil. Tratá-los como nacional duplicava cada ano (o Brasil aparecia com
+ * 11,69 e com 10,27 em 1980, sendo só o primeiro o país).
+ */
 const casarNivel = (codigo, nivel) => {
-  if (nivel === "brasil") return codigo === "0" || codigo === "1" || codigo === "";
+  if (nivel === "brasil") return codigo === "0" || codigo === "";
   if (nivel === "uf") return /^\d{2}$/.test(codigo);
   return /^\d{7}$/.test(codigo);
 };

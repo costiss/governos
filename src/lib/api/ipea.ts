@@ -78,11 +78,18 @@ export async function buscarIpea(c: ConsultaIpea): Promise<Ponto[]> {
 export type NivelTerritorial = "brasil" | "uf" | "municipio";
 
 function casarNivel(codigo: string, nivel: NivelTerritorial): boolean {
-  if (nivel === "brasil") return codigo === "0" || codigo === "1" || codigo === "";
+  if (nivel === "brasil") return codigo === "0" || codigo === "";
   if (nivel === "uf") return /^\d{2}$/.test(codigo);
   return /^\d{7}$/.test(codigo);
 }
 
+/**
+ * O padrão é `["brasil", "uf"]`: o Brasil e as 27 UFs, sem os municípios.
+ *
+ * É o recorte que serve às duas telas ao mesmo tempo — a linha nacional (chave
+ * "0") e o mapa (chaves de 2 dígitos). Excluir o Brasil aqui deixaria a visão
+ * geral vazia; incluí-lo é inofensivo para o mapa, que só reconhece siglas.
+ */
 export async function buscarIpeaPorTerritorio(
   c: Omit<ConsultaIpea, "territorio"> & { niveis?: NivelTerritorial[] },
 ): Promise<Map<string, Ponto[]>> {
@@ -92,7 +99,7 @@ export async function buscarIpeaPorTerritorio(
     signal: c.signal,
   });
 
-  const niveis = c.niveis ?? ["uf"];
+  const niveis = c.niveis ?? ["brasil", "uf"];
   const porTerritorio = new Map<string, Ponto[]>();
   for (const valor of dados?.value ?? []) {
     const territorio = valor.TERCODIGO;

@@ -1,12 +1,16 @@
-import { AlertTriangle, Loader2 } from "lucide-react";
-import { useMemo } from "react";
-import { GraficoArea, juntarPorData } from "@/components/charts/GraficoArea";
+import { lazy, Suspense, useMemo } from "react";
+import { CarregandoGrafico, FalhaSerie, EstadoVazio } from "@/components/hud/Estados";
 import { FichaIndicador } from "@/components/hud/FichaIndicador";
 import { Regua, type ValorPorMandato } from "@/components/hud/Regua";
 import { Segmentado } from "@/components/hud/Segmentado";
 import { SeletorIndicador } from "@/components/hud/SeletorIndicador";
 import { TabelaMandatos } from "@/components/hud/TabelaMandatos";
 import { useHashRoute } from "@/hooks/useHashRoute";
+import { juntarPorData } from "@/lib/grafico";
+
+// O ECharts é grande: o gráfico entra sob demanda para a primeira pintura não
+// esperar por ele — o que pesa de verdade num celular.
+const GraficoArea = lazy(() => import("@/components/charts/GraficoArea"));
 import { useApoio, useSerie } from "@/hooks/useSerie";
 import { NORMALIZACOES, type Normalizacao } from "@/lib/api/types";
 import { formatarCompacto, formatarEixo, formatarMesCurto } from "@/lib/format";
@@ -77,7 +81,7 @@ export function OverviewView() {
   }, [pontos]);
 
   if (!escolhido) {
-    return <Vazio />;
+    return <EstadoVazio titulo="Nenhum indicador disponível." />;
   }
 
   const unidadeEfetiva =
@@ -144,20 +148,22 @@ export function OverviewView() {
           </div>
         </header>
 
-        {error && <Falha mensagem={(error as Error).message} />}
+        {error && <FalhaSerie mensagem={(error as Error).message} />}
 
         <div className="h-[260px] sm:h-[340px] lg:h-[380px]">
           {isPending ? (
             <CarregandoGrafico />
           ) : (
-            <GraficoArea
-              dados={dadosGrafico}
-              xDataKey="data"
-              series={[{ chave: "valor", rotulo: escolhido.curto }]}
-              formatoX={formatarMesCurto}
-              formatoY={(valor) => formatarEixo(valor, unidadeEfetiva.casas)}
-              carregando={isPending}
-            />
+            <Suspense fallback={<CarregandoGrafico />}>
+              <GraficoArea
+                dados={dadosGrafico}
+                xDataKey="data"
+                series={[{ chave: "valor", rotulo: escolhido.curto }]}
+                formatoX={formatarMesCurto}
+                formatoY={(valor) => formatarEixo(valor, unidadeEfetiva.casas)}
+                carregando={isPending}
+              />
+            </Suspense>
           )}
         </div>
 
@@ -209,30 +215,3 @@ export function OverviewView() {
   );
 }
 
-function CarregandoGrafico() {
-  return (
-    <div className="border-border text-muted-foreground flex h-full items-center justify-center gap-2 rounded-sm border border-dashed text-xs">
-      <Loader2 className="size-3.5 animate-spin" />
-      Lendo a série oficial…
-    </div>
-  );
-}
-
-function Falha({ mensagem }: { mensagem: string }) {
-  return (
-    <div className="border-border text-muted-foreground flex items-start gap-2 rounded-sm border border-dashed px-3 py-2 text-xs">
-      <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-      <span>
-        Não foi possível ler esta série agora. {mensagem}
-      </span>
-    </div>
-  );
-}
-
-function Vazio() {
-  return (
-    <div className="border-border text-muted-foreground rounded-sm border border-dashed px-4 py-8 text-center text-sm">
-      Nenhum indicador disponível.
-    </div>
-  );
-}

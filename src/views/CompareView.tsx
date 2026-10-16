@@ -1,6 +1,5 @@
-import { AlertTriangle, Loader2 } from "lucide-react";
-import { useMemo } from "react";
-import { GraficoArea, juntarPorMandato } from "@/components/charts/GraficoArea";
+import { lazy, Suspense, useMemo } from "react";
+import { CarregandoGrafico, EstadoVazio, FalhaSerie } from "@/components/hud/Estados";
 import { FichaIndicador } from "@/components/hud/FichaIndicador";
 import { Regua } from "@/components/hud/Regua";
 import { Segmentado } from "@/components/hud/Segmentado";
@@ -9,10 +8,14 @@ import { useApoio, useSerie } from "@/hooks/useSerie";
 import { NORMALIZACOES, type Normalizacao } from "@/lib/api/types";
 import { formatarDuracao, formatarEixo, formatarValor } from "@/lib/format";
 import { GOVERNOS, mesesDeMandato, type Governo } from "@/lib/governos";
+import { juntarPorMandato } from "@/lib/grafico";
 import { INDICADORES, indicadorPorId } from "@/lib/indicadores";
 import { alinharPorMandato, normalizar, paraMensal, resumir, type ModoNormalizacao } from "@/lib/serie";
 import { cn } from "@/lib/utils";
 import { UFS } from "@/lib/uf";
+
+/** Também sob demanda: a visão Comparar não precisa pagar pelo ECharts para pintar. */
+const GraficoArea = lazy(() => import("@/components/charts/GraficoArea"));
 
 /**
  * Visão Comparar — A contra B.
@@ -102,9 +105,7 @@ export function CompareView() {
 
   if (!escolhido) {
     return (
-      <div className="border-border text-muted-foreground rounded-sm border border-dashed px-4 py-8 text-center text-sm">
-        Nenhum indicador disponível.
-      </div>
+      <EstadoVazio titulo="Nenhum indicador disponível." />
     );
   }
 
@@ -180,28 +181,22 @@ export function CompareView() {
         />
       </div>
 
-      {error && (
-        <div className="border-border text-muted-foreground flex items-start gap-2 rounded-sm border border-dashed px-3 py-2 text-xs">
-          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-          <span>Não foi possível ler esta série agora. {(error as Error).message}</span>
-        </div>
-      )}
+      {error && <FalhaSerie mensagem={(error as Error).message} />}
 
       <div className="h-[300px] sm:h-[400px]">
         {isPending ? (
-          <div className="border-border text-muted-foreground flex h-full items-center justify-center gap-2 rounded-sm border border-dashed text-xs">
-            <Loader2 className="size-3.5 animate-spin" />
-            Lendo a série oficial…
-          </div>
+          <CarregandoGrafico />
         ) : (
-          <GraficoArea
-            dados={dadosGrafico}
-            xDataKey="mes"
-            series={series}
-            formatoX={rotuloDoMes}
-            formatoY={(valor) => formatarEixo(valor, unidadeEfetiva.casas)}
-            carregando={isPending}
-          />
+          <Suspense fallback={<CarregandoGrafico />}>
+            <GraficoArea
+              dados={dadosGrafico}
+              xDataKey="mes"
+              series={series}
+              formatoX={rotuloDoMes}
+              formatoY={(valor) => formatarEixo(valor, unidadeEfetiva.casas)}
+              carregando={isPending}
+            />
+          </Suspense>
         )}
       </div>
 

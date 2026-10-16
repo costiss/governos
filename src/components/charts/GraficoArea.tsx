@@ -3,6 +3,7 @@ import {
   EChartsAreaChart,
   type ChartConfig,
 } from "@/components/evilcharts/charts/echarts-area-chart";
+import type { SerieGrafico } from "@/lib/grafico";
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,13 +27,6 @@ const TINTA = {
 
 const TRACOS = ["solid", "dashed", "animated-dashed", "dashed", "solid"] as const;
 const PREENCHIMENTOS = ["gradient", "hatched", "lines", "dotted", "gradient-reverse"] as const;
-
-export interface SerieGrafico {
-  /** Chave na linha de dados. */
-  chave: string;
-  /** Rótulo na legenda e no tooltip. */
-  rotulo: string;
-}
 
 interface GraficoAreaProps {
   /** Linhas: { [xDataKey]: string; [chave]: number | null } */
@@ -131,62 +125,5 @@ export function GraficoArea({
   );
 }
 
-/**
- * Monta as linhas do gráfico a partir de séries alinhadas por data.
- * Datas ausentes numa série ficam `null` — buraco, não zero.
- */
-export function juntarPorData(
-  xDataKey: string,
-  entradas: Array<{ chave: string; pontos: Array<{ data: string; valor: number }> }>,
-): Array<Record<string, unknown>> {
-  const eixo = new Set<string>();
-  for (const entrada of entradas) {
-    for (const ponto of entrada.pontos) eixo.add(ponto.data);
-  }
-
-  const mapas = entradas.map((entrada) => ({
-    chave: entrada.chave,
-    porData: new Map(entrada.pontos.map((ponto) => [ponto.data, ponto.valor])),
-  }));
-
-  return [...eixo]
-    .sort()
-    .map((data) => {
-      const linha: Record<string, unknown> = { [xDataKey]: data };
-      for (const { chave, porData } of mapas) {
-        const valor = porData.get(data);
-        linha[chave] = valor == null ? null : Number(valor.toFixed(6));
-      }
-      return linha;
-    });
-}
-
-/**
- * Monta as linhas no eixo "mês de mandato": séries reindexadas por tempo de
- * posse. É o que permite sobrepor dois governos no mesmo gráfico.
- */
-export function juntarPorMandato(
-  xDataKey: string,
-  entradas: Array<{ chave: string; pontos: Array<{ mes: number; valor: number }> }>,
-): Array<Record<string, unknown>> {
-  const eixo = new Set<number>();
-  for (const entrada of entradas) {
-    for (const ponto of entrada.pontos) eixo.add(ponto.mes);
-  }
-
-  const mapas = entradas.map((entrada) => ({
-    chave: entrada.chave,
-    porMes: new Map(entrada.pontos.map((ponto) => [ponto.mes, ponto.valor])),
-  }));
-
-  return [...eixo]
-    .sort((a, b) => a - b)
-    .map((mes) => {
-      const linha: Record<string, unknown> = { [xDataKey]: String(mes) };
-      for (const { chave, porMes } of mapas) {
-        const valor = porMes.get(mes);
-        linha[chave] = valor == null ? null : Number(valor.toFixed(6));
-      }
-      return linha;
-    });
-}
+/** Export padrão para carregamento sob demanda (mantém o ECharts fora do bundle inicial). */
+export default GraficoArea;
