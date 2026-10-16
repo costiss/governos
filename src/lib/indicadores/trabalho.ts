@@ -56,6 +56,13 @@ const milhoesDeReais = (nome: string): Unidade => ({
   sufixo: " mi",
 });
 
+const postos = (nome: string): Unidade => ({
+  simbolo: "postos",
+  nome,
+  casas: 0,
+  sufixo: " postos",
+});
+
 interface DefinicaoIpea {
   id: string;
   nome: string;
@@ -137,6 +144,48 @@ export const INDICADORES_TRABALHO: Indicador[] = [
     series: "PNADC12_TDESOC12",
     normalizacoes: ["absoluto", "base100"],
     revisavel: true,
+  }),
+  indicador({
+    id: "desocupacao-uf",
+    nome: "Taxa de desocupação por UF",
+    curto: "Desocupação (UF)",
+    descricao:
+      "Percentual de pessoas de 14 anos ou mais desocupadas (que procuraram trabalho e não encontraram) em relação à força de trabalho, por Unidade da Federação — PNAD Contínua (IBGE), série trimestral. Alimenta o mapa; sem recorte, traz o Brasil.",
+    unidade: percentual("taxa de desocupação"),
+    frequencia: "trimestral",
+    desde: 2012,
+    direcao: "baixo-melhor",
+    series: "PNADCT_TXDSCUPUF",
+    normalizacoes: ["absoluto", "base100"],
+    porUf: true,
+    revisavel: true,
+  }),
+  indicador({
+    id: "caged",
+    nome: "Saldo do Caged — emprego formal",
+    curto: "Saldo do Caged",
+    descricao:
+      "Saldo mensal do emprego formal celetista: admissões menos demissões de empregados, em postos de trabalho, no novo Caged (Ministério do Trabalho e Emprego). Valores negativos indicam demissões líquidas. A série começa em janeiro de 2020, quando o novo Caged substituiu o antigo, e capta admissões declaradas ainda sujeitas a retificação.",
+    unidade: postos("postos de trabalho formais, admissões menos demissões"),
+    frequencia: "mensal",
+    desde: 2020,
+    direcao: "alto-melhor",
+    series: "CAGED12_SALDON12",
+    normalizacoes: ["absoluto"],
+    revisavel: true,
+  }),
+  indicador({
+    id: "salario-minimo-real",
+    nome: "Salário mínimo real",
+    curto: "Salário mínimo real",
+    descricao:
+      "Valor do salário mínimo nacional deflacionado pelo índice de inflação — o poder de compra do piso salarial, em reais constantes. Série do Ipea que começa em julho de 1940, quando o salário mínimo foi instituído; até maio de 1984 os valores se referem ao maior piso vigente no país.",
+    unidade: reais("reais, a preços constantes"),
+    frequencia: "mensal",
+    desde: 1940,
+    direcao: "alto-melhor",
+    series: "GAC12_SALMINRE12",
+    normalizacoes: ["absoluto", "base100"],
   }),
   indicador({
     id: "desocupacao-anual",

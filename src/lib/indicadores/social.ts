@@ -41,6 +41,48 @@ async function seriePorTerritorio(
 
 export const INDICADORES_SOCIAL: Indicador[] = [
   {
+    id: "idh",
+    nome: "Índice de Desenvolvimento Humano (IDH)",
+    curto: "IDH",
+    categoria: "social",
+    descricao:
+      "Índice de Desenvolvimento Humano: sintetiza renda, educação e longevidade numa escala de 0 a 1. Elaborado pelo Atlas do Desenvolvimento Humano (PNUD, Ipea e FJP) a partir dos Censos Demográficos — um ponto a cada dez anos: 1991, 2000 e 2010, quando alcançou 0,727 no Brasil. O Atlas ainda não incorporou o Censo 2022 à série.",
+    unidade: { simbolo: "índice", nome: "índice de 0 a 1", casas: 3 },
+    frequencia: "anual",
+    desde: 1991,
+    direcao: "alto-melhor",
+    fonte: "ipea",
+    codigo: "Ipea ADH_IDHM (Atlas do Desenvolvimento Humano)",
+    consulta: "https://www.atlasbrasil.org.br/",
+    normalizacoes: ["absoluto"],
+    // A série traz Brasil, as 27 UFs e os municípios numa chamada só; o recorte
+    // por UF alimenta o mapa e, sem UF, devolve o Brasil (TERCODIGO "0").
+    porUf: true,
+    serieEstadual: "ADH_IDHM",
+    async buscar({ uf, signal }) {
+      return seriePorTerritorio(this, "ADH_IDHM", uf, signal);
+    },
+  },
+  {
+    id: "renda-per-capita",
+    nome: "Renda domiciliar per capita média",
+    curto: "Renda per capita",
+    categoria: "social",
+    descricao:
+      "Média da renda domiciliar per capita mensal de todas as fontes, a preços do último ano da série. Estimativa do Ipea a partir da PNAD (até 2011) e da PNAD Contínua (2012 em diante), do IBGE; o encadeamento entre as duas pesquisas aplica um fator de compatibilização.",
+    unidade: { simbolo: "R$", nome: "reais por mês, a preços constantes", casas: 0, prefixo: "R$ " },
+    frequencia: "anual",
+    desde: 1995,
+    direcao: "alto-melhor",
+    fonte: "ipea",
+    codigo: "Ipea PNADS_RENDAMEDIA (IBGE/PNAD)",
+    consulta: "https://www.ipeadata.gov.br",
+    normalizacoes: ["absoluto", "base100"],
+    async buscar({ signal }) {
+      return serieNacional(this, "PNADS_RENDAMEDIA", signal);
+    },
+  },
+  {
     id: "gini",
     nome: "Índice de Gini da renda domiciliar per capita (escala de 0 a 100)",
     curto: "Gini da renda",

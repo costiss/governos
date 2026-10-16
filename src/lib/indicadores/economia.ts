@@ -290,6 +290,34 @@ const dividaLiquida: Indicador = {
   },
 };
 
+const dividaBruta: Indicador = {
+  id: "divida-bruta",
+  nome: "Dívida bruta do governo geral",
+  curto: "Dívida bruta",
+  categoria: "economia",
+  descricao:
+    "Dívida bruta do governo geral (União, estados e municípios) como proporção do PIB, na metodologia do Banco Central adotada a partir de 2008. Difere da dívida líquida porque NÃO abate os ativos financeiros do próprio setor público (créditos, reservas, títulos em poder de outros órgãos): por isso é sempre maior e reage menos às variações do câmbio e das reservas.",
+  unidade: {
+    simbolo: "%",
+    nome: "dívida bruta do governo geral (% do PIB)",
+    casas: 2,
+    sufixo: " % do PIB",
+  },
+  frequencia: "mensal",
+  desde: 2006,
+  direcao: "baixo-melhor",
+  fonte: "bcb",
+  codigo: "BCB SGS 13762",
+  consulta: PAGINA_SGS,
+  normalizacoes: ["absoluto"],
+  buscar: async (opcoes) => {
+    const de = "2006-12-01";
+    const rotulo = "Dívida bruta do governo geral (% do PIB)";
+    const pontos = await buscarBcb({ codigo: 13762, de, rotulo, signal: opcoes.signal });
+    return montarSerie(dividaBruta, pontos, montarUrlBcb({ codigo: 13762, de, rotulo }));
+  },
+};
+
 const reservas: Indicador = {
   id: "reservas-internacionais",
   nome: "Reservas internacionais",
@@ -347,6 +375,75 @@ const resultadoPrimario: Indicador = {
   },
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Investimento
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** URL verificável da FBCF no Ipea Data (Contas Nacionais do IBGE). */
+const URL_IPEA_FBCF = montarUrlIpea("SCN104_FBKFG104");
+/** URL verificável da taxa de investimento no Ipea Data. */
+const URL_IPEA_TAXA_INVESTIMENTO = montarUrlIpea("PAN_FBKFPIBV");
+
+const investimento: Indicador = {
+  id: "investimento",
+  nome: "Formação bruta de capital fixo — variação real",
+  curto: "Investimento (FBCF)",
+  categoria: "economia",
+  descricao:
+    "Variação real (volume) da formação bruta de capital fixo — máquinas, equipamentos, construção e outros ativos fixos — em relação ao mesmo trimestre do ano anterior. É o investimento produtivo medido pelas Contas Nacionais do IBGE.",
+  unidade: {
+    simbolo: "%",
+    nome: "variação real sobre o mesmo trimestre do ano anterior",
+    casas: 2,
+    sufixo: " %",
+  },
+  frequencia: "trimestral",
+  desde: 1996,
+  direcao: "alto-melhor",
+  fonte: "ipea",
+  codigo: "Ipea Data SCN104_FBKFG104 (IBGE/SCN)",
+  consulta: URL_IPEA_FBCF,
+  normalizacoes: ["absoluto"],
+  buscar: async (opcoes) => {
+    const pontos = await buscarIpea({
+      codigo: "SCN104_FBKFG104",
+      rotulo: "Formação bruta de capital fixo — variação real",
+      signal: opcoes.signal,
+    });
+    return montarSerie(investimento, pontos, URL_IPEA_FBCF, { revisavel: true });
+  },
+};
+
+const taxaInvestimento: Indicador = {
+  id: "taxa-investimento",
+  nome: "Taxa de investimento — formação bruta de capital fixo (% do PIB)",
+  curto: "Taxa de investimento",
+  categoria: "economia",
+  descricao:
+    "Formação bruta de capital fixo como proporção do PIB a preços correntes: quanto da produção do país é destinado a investimento. É a leitura em nível do esforço de investimento, complementar à variação real trimestral.",
+  unidade: {
+    simbolo: "%",
+    nome: "formação bruta de capital fixo (% do PIB)",
+    casas: 2,
+    sufixo: " % do PIB",
+  },
+  frequencia: "anual",
+  desde: 1996,
+  direcao: "alto-melhor",
+  fonte: "ipea",
+  codigo: "Ipea Data PAN_FBKFPIBV (IBGE/SCN)",
+  consulta: URL_IPEA_TAXA_INVESTIMENTO,
+  normalizacoes: ["absoluto"],
+  buscar: async (opcoes) => {
+    const pontos = await buscarIpea({
+      codigo: "PAN_FBKFPIBV",
+      rotulo: "Taxa de investimento nominal",
+      signal: opcoes.signal,
+    });
+    return montarSerie(taxaInvestimento, pontos, URL_IPEA_TAXA_INVESTIMENTO, { revisavel: true });
+  },
+};
+
 export const INDICADORES_ECONOMIA: Indicador[] = [
   pibReal,
   ipcaMensal,
@@ -355,6 +452,9 @@ export const INDICADORES_ECONOMIA: Indicador[] = [
   selicAcumuladaMes,
   cambio,
   dividaLiquida,
+  dividaBruta,
   reservas,
   resultadoPrimario,
+  investimento,
+  taxaInvestimento,
 ];
