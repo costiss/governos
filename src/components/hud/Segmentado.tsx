@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 export interface ItemSegmento<T extends string> {
   valor: T;
   rotulo: string;
+  /** Rótulo encurtado, usado quando o espaço é apertado (mobile). */
+  rotuloCurto?: string;
   descricao?: string;
 }
 
@@ -14,6 +16,8 @@ interface SegmentadoProps<T extends string> {
   rotulo: string;
   className?: string;
   compacto?: boolean;
+  /** Itens dividem o espaço em partes iguais — para ocupar a largura toda. */
+  larguraTotal?: boolean;
 }
 
 /**
@@ -27,6 +31,7 @@ export function Segmentado<T extends string>({
   rotulo,
   className,
   compacto = false,
+  larguraTotal = false,
 }: SegmentadoProps<T>) {
   return (
     <div
@@ -34,6 +39,7 @@ export function Segmentado<T extends string>({
       aria-label={rotulo}
       className={cn(
         "border-border inline-flex items-stretch rounded-sm border",
+        larguraTotal && "flex w-full",
         className,
       )}
     >
@@ -54,10 +60,18 @@ export function Segmentado<T extends string>({
               "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none",
               compacto ? "px-2.5 py-1 text-[11px]" : "px-3.5 py-1.5 text-xs",
               "font-medium tracking-[0.02em] whitespace-nowrap",
+              larguraTotal && "flex-1",
               indice > 0 && "border-border border-l",
             )}
           >
-            {item.rotulo}
+            {item.rotuloCurto ? (
+              <>
+                <span className="sm:hidden">{item.rotuloCurto}</span>
+                <span className="hidden sm:inline">{item.rotulo}</span>
+              </>
+            ) : (
+              item.rotulo
+            )}
           </button>
         );
       })}

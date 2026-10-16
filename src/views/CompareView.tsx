@@ -302,33 +302,86 @@ function ComparacaoLado({
   ];
 
   return (
-    <div className="quiet-scroll -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-      <table className="w-full min-w-[520px] border-collapse text-xs">
-        <caption className="sr-only">Comparação lado a lado entre dois mandatos</caption>
-        <thead>
-          <tr className="border-border border-b">
-            <th className="rotulo py-2 text-left font-semibold">Indicador</th>
-            <ColunaCabecalho indice={0} governo={a.governo} unidadeSimbolo={base.unidade.simbolo} />
-            <ColunaCabecalho indice={1} governo={b.governo} unidadeSimbolo={base.unidade.simbolo} />
-          </tr>
-        </thead>
-        <tbody>
-          {linhas.map((linha) => (
-            <tr key={linha.rotulo} className="border-border/60 border-b">
-              <th scope="row" className="text-muted-foreground py-2 pr-3 text-left font-normal">
-                {linha.rotulo}
-              </th>
-              <Celula valor={linha.a} destaque={linha.melhor === "a"} />
-              <Celula valor={linha.b} destaque={linha.melhor === "b"} />
+    <div>
+      {/* Mobile: cada métrica com A e B lado a lado, em colunas estreitas.
+          Uma tabela de três colunas em 390px mostraria só a coluna A. */}
+      <div className="sm:hidden">
+        <div className="border-border grid grid-cols-2 gap-3 border-b py-2">
+          <CabecalhoCompacto indice={0} governo={a.governo} />
+          <CabecalhoCompacto indice={1} governo={b.governo} />
+        </div>
+        {linhas.map((linha) => (
+          <div key={linha.rotulo} className="border-border/60 border-b py-2.5">
+            <p className="text-muted-foreground mb-1 text-[11px]">{linha.rotulo}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <CelulaCompacta valor={linha.a} destaque={linha.melhor === "a"} />
+              <CelulaCompacta valor={linha.b} destaque={linha.melhor === "b"} />
+            </div>
+          </div>
+        ))}
+        <p className="text-muted-foreground mt-2 text-[10px]">
+          A é traço sólido, B é traço tracejado. Base “{base.nome}”.
+        </p>
+      </div>
+
+      {/* A partir do breakpoint médio, a leitura tabular original. */}
+      <div className="quiet-scroll hidden overflow-x-auto sm:block">
+        <table className="w-full border-collapse text-xs">
+          <caption className="sr-only">Comparação lado a lado entre dois mandatos</caption>
+          <thead>
+            <tr className="border-border border-b">
+              <th className="rotulo py-2 text-left font-semibold">Indicador</th>
+              <ColunaCabecalho indice={0} governo={a.governo} unidadeSimbolo={base.unidade.simbolo} />
+              <ColunaCabecalho indice={1} governo={b.governo} unidadeSimbolo={base.unidade.simbolo} />
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="text-muted-foreground mt-2 text-[10px]">
-        Valores sobre a base “{base.nome}”. A série A é desenhada em traço sólido, a B em traço
-        tracejado.
-      </p>
+          </thead>
+          <tbody>
+            {linhas.map((linha) => (
+              <tr key={linha.rotulo} className="border-border/60 border-b">
+                <th scope="row" className="text-muted-foreground py-2 pr-3 text-left font-normal">
+                  {linha.rotulo}
+                </th>
+                <Celula valor={linha.a} destaque={linha.melhor === "a"} />
+                <Celula valor={linha.b} destaque={linha.melhor === "b"} />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="text-muted-foreground mt-2 text-[10px]">
+          Valores sobre a base “{base.nome}”. A série A é desenhada em traço sólido, a B em traço
+          tracejado.
+        </p>
+      </div>
     </div>
+  );
+}
+
+function CabecalhoCompacto({ indice, governo }: { indice: number; governo: Governo }) {
+  return (
+    <div className="flex items-center gap-2">
+      <AmostraTraco tracejado={indice === 1} />
+      <span className="min-w-0">
+        <span className="text-foreground block truncate text-[11px] font-medium">
+          {indice === 0 ? "A" : "B"} · {governo.mandato}
+        </span>
+        <span className="text-muted-foreground block truncate text-[10px]">{governo.partido}</span>
+      </span>
+    </div>
+  );
+}
+
+function CelulaCompacta({ valor, destaque }: { valor: string; destaque: boolean }) {
+  return (
+    <span
+      className={cn(
+        "font-mono text-[12px] tabular-nums",
+        destaque ? "text-foreground font-semibold" : "text-foreground/85",
+      )}
+      data-num
+    >
+      {valor}
+      {destaque && <span className="text-muted-foreground ml-1 text-[9px]">▲</span>}
+    </span>
   );
 }
 

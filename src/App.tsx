@@ -7,9 +7,9 @@ import { MapaView } from "@/views/MapaView";
 import { OverviewView } from "@/views/OverviewView";
 
 const VISOES = [
-  { valor: "geral", rotulo: "Visão geral" },
-  { valor: "comparar", rotulo: "Comparar" },
-  { valor: "mapa", rotulo: "Mapa" },
+  { valor: "geral", rotulo: "Visão geral", rotuloCurto: "Geral" },
+  { valor: "comparar", rotulo: "Comparar", rotuloCurto: "Comparar" },
+  { valor: "mapa", rotulo: "Mapa", rotuloCurto: "Mapa" },
 ] as const;
 
 type NomeVisao = (typeof VISOES)[number]["valor"];
@@ -33,6 +33,7 @@ export function App() {
             itens={VISOES}
             valor={nome}
             aoMudar={(valor) => ir(valor)}
+            larguraTotal
           />
         }
       />
