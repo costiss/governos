@@ -138,11 +138,11 @@ export const MapaBrasil = memo(function MapaBrasil({
 
   const alternar = (uf: string) => aoSelecionar?.(ufAtiva === uf ? null : uf);
 
-  const grandes = BRAZIL_UFS.filter((s) => !(comChamadas && s.uf in CHAMADAS));
+  const grandes = BRAZIL_UFS.filter((s) => !(s.uf in CHAMADAS));
   const pequenos = BRAZIL_UFS.filter((s) => comChamadas && s.uf in CHAMADAS);
 
   return (
-    <div className={cn("relative flex w-full items-center justify-center", className)}>
+    <div className={cn("relative flex h-full w-full items-center justify-center", className)}>
       <svg
         viewBox={`0 0 ${comChamadas ? LARGURA_TOTAL : BRAZIL_VIEWBOX.width} ${BRAZIL_VIEWBOX.height}`}
         className={cn("h-full max-h-full w-full", ufAtiva && "map-dim")}

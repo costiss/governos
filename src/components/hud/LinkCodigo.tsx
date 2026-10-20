@@ -36,7 +36,7 @@ export function LinkCodigo({ className }: { className?: string }) {
       title="Código-fonte deste app"
       aria-label="Código-fonte deste app"
       className={cn(
-        "text-muted-foreground hover:text-foreground flex size-9 shrink-0 items-center justify-center",
+        "text-muted-foreground hover:text-foreground flex size-11 shrink-0 items-center justify-center",
         "rounded-sm transition-colors md:size-8",
         "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
         className,

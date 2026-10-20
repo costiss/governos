@@ -5,6 +5,7 @@ import { Regua, type ValorPorMandato } from "@/components/hud/Regua";
 import { Segmentado } from "@/components/hud/Segmentado";
 import { SeletorPeriodo } from "@/components/hud/SeletorPeriodo";
 import { SeletorIndicador } from "@/components/hud/SeletorIndicador";
+import { SeletorIndicadorMovel } from "@/components/hud/SeletorIndicadorMovel";
 import { TabelaMandatos } from "@/components/hud/TabelaMandatos";
 import { useHashRoute } from "@/hooks/useHashRoute";
 import { juntarPorData } from "@/lib/grafico";
@@ -108,8 +109,8 @@ export function OverviewView() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[248px_1fr] lg:gap-8">
-      <aside className="lg:border-border lg:border-r lg:pr-6">
-        <div className="lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto quiet-scroll">
+      <aside className="border-border hidden lg:block lg:border-r lg:pr-6">
+        <div className="quiet-scroll lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
           <SeletorIndicador
             selecionado={escolhido.id}
             aoSelecionar={(id) => definirParam("i", id)}
@@ -129,13 +130,20 @@ export function OverviewView() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto">
+              <SeletorIndicadorMovel
+                indicador={escolhido}
+                aoSelecionar={(id) => definirParam("i", id)}
+                className="min-w-0 flex-1 lg:hidden"
+              />
+
               {escolhido.porUf && (
                 <select
+                  name="uf"
                   value={uf ?? ""}
                   onChange={(evento) => definirParam("uf", evento.target.value || null)}
                   aria-label="Recorte territorial"
-                  className="border-border bg-card text-foreground focus-visible:ring-ring h-8 rounded-sm border px-2 font-mono text-[11px] focus-visible:ring-2 focus-visible:outline-none"
+                  className="border-border bg-card text-foreground focus-visible:ring-ring h-11 rounded-sm border px-2 font-mono text-[11px] focus-visible:ring-2 focus-visible:outline-none sm:h-8"
                 >
                   <option value="">Brasil</option>
                   {UFS.map((estado) => (
@@ -164,19 +172,21 @@ export function OverviewView() {
               )}
 
               {escolhido.normalizacoes.length > 1 && (
-                <Segmentado
-                  rotulo="Normalização"
-                  compacto
-                  itens={escolhido.normalizacoes.map((opcao) => ({
-                    valor: opcao,
-                    rotulo: NORMALIZACOES[opcao].rotulo,
-                    descricao: NORMALIZACOES[opcao].descricao,
-                  }))}
-                  valor={(escolhido.normalizacoes.includes(modo as Normalizacao)
-                    ? modo
-                    : "absoluto") as Normalizacao}
-                  aoMudar={(valor) => definirParam("n", valor === "absoluto" ? null : valor)}
-                />
+                <div className="quiet-scroll max-w-full overflow-x-auto">
+                  <Segmentado
+                    rotulo="Normalização"
+                    compacto
+                    itens={escolhido.normalizacoes.map((opcao) => ({
+                      valor: opcao,
+                      rotulo: NORMALIZACOES[opcao].rotulo,
+                      descricao: NORMALIZACOES[opcao].descricao,
+                    }))}
+                    valor={(escolhido.normalizacoes.includes(modo as Normalizacao)
+                      ? modo
+                      : "absoluto") as Normalizacao}
+                    aoMudar={(valor) => definirParam("n", valor === "absoluto" ? null : valor)}
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -208,7 +218,7 @@ export function OverviewView() {
               <button
                 type="button"
                 onClick={() => definirParam("g", null)}
-                className="text-muted-foreground hover:text-foreground text-[11px] underline"
+                className="text-muted-foreground hover:text-foreground -my-2 py-2 text-[11px] underline"
               >
                 ver série inteira
               </button>

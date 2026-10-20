@@ -1,4 +1,5 @@
 import { lazy, Suspense, useMemo } from "react";
+import { ArrowLeftRight } from "lucide-react";
 import { CarregandoGrafico, EstadoVazio, FalhaSerie } from "@/components/hud/Estados";
 import { FichaIndicador } from "@/components/hud/FichaIndicador";
 import { Regua } from "@/components/hud/Regua";
@@ -34,7 +35,7 @@ const PADRAO_A = "lula-i";
 const PADRAO_B = "bolsonaro";
 
 export function CompareView() {
-  const { rota, definirParam } = useHashRoute();
+  const { rota, definirParam, definirParams } = useHashRoute();
   const apoio = useApoio();
 
   const escolhido = indicadorPorId(rota.params.get("i")) ?? INDICADORES[0];
@@ -108,7 +109,13 @@ export function CompareView() {
     return escolhido!.unidade;
   }, [escolhido, modo]);
 
-  const selecionados = [idA, idB].filter((id) => GOVERNOS.some((g) => g.id === id));
+  const selecionados = [
+    governoA ? idA : null,
+    governoB ? idB : null,
+  ].filter((id): id is string => id != null);
+  const rotulosDaRegua = Object.fromEntries(
+    selecionados.map((id, indice) => [id, indice === 0 ? "A" : "B"]),
+  );
 
   /**
    * Mandatos em que este indicador tem dado.
@@ -135,12 +142,24 @@ export function CompareView() {
     [escolhido],
   );
 
+  /**
+   * A régua funciona como uma fila de dois: o mandato tocado entra como B e o
+   * B anterior sobe para A. Assim os DOIS últimos escolhidos são os comparados —
+   * e um terceiro toque substitui o mais antigo em vez de ser bloqueado.
+   */
   function alternarGoverno(id: string) {
-    // Régua de dois lados: tocar num terceiro substitui o mais antigo.
-    if (id === idA) return definirParam("a", idB);
-    if (id === idB) return definirParam("b", idA);
-    definirParam("b", idA);
-    definirParam("a", id);
+    if (id === idA || id === idB) return;
+    const ultimo = governoB ? idB : governoA ? idA : null;
+    if (!ultimo) {
+      definirParam("a", id);
+      return;
+    }
+    definirParams({ a: ultimo, b: id });
+  }
+
+  function trocarLados() {
+    if (!governoA || !governoB) return;
+    definirParams({ a: idB, b: idA });
   }
 
   if (!escolhido) {
@@ -165,10 +184,11 @@ export function CompareView() {
 
           <div className="flex flex-wrap items-center gap-2">
             <select
+              name="indicador"
               value={escolhido.id}
               onChange={(evento) => definirParam("i", evento.target.value)}
               aria-label="Indicador"
-              className="border-border bg-card text-foreground focus-visible:ring-ring h-8 max-w-[15rem] rounded-sm border px-2 text-[11px] focus-visible:ring-2 focus-visible:outline-none"
+              className="border-border bg-card text-foreground focus-visible:ring-ring h-11 max-w-[15rem] rounded-sm border px-2 text-[11px] focus-visible:ring-2 focus-visible:outline-none sm:h-8"
             >
               {INDICADORES.map((indicador) => (
                 <option key={indicador.id} value={indicador.id}>
@@ -179,10 +199,11 @@ export function CompareView() {
 
             {escolhido.porUf && (
               <select
+                name="uf"
                 value={uf ?? ""}
                 onChange={(evento) => definirParam("uf", evento.target.value || null)}
                 aria-label="Recorte territorial"
-                className="border-border bg-card text-foreground focus-visible:ring-ring h-8 rounded-sm border px-2 font-mono text-[11px] focus-visible:ring-2 focus-visible:outline-none"
+                className="border-border bg-card text-foreground focus-visible:ring-ring h-11 rounded-sm border px-2 font-mono text-[11px] focus-visible:ring-2 focus-visible:outline-none sm:h-8"
               >
                 <option value="">Brasil</option>
                 {UFS.map((estado) => (
@@ -224,19 +245,47 @@ export function CompareView() {
       </header>
 
       <div className="border-border rounded-sm border p-3">
-        <p className="rotulo mb-2">
-          Escolha dois mandatos — toque para selecionar
-        </p>
+        <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="rotulo">Mandatos</p>
+            <p className="text-muted-foreground mt-0.5 text-[10px] leading-relaxed">
+              Toque num mandato para comparar.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={trocarLados}
+            disabled={!governoA || !governoB}
+            className={cn(
+              "border-border text-muted-foreground hover:text-foreground hover:border-border-strong",
+              "flex h-10 shrink-0 items-center gap-1.5 rounded-sm border px-2 text-[10px] font-medium transition-colors",
+              "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none disabled:opacity-40",
+            )}
+          >
+            <ArrowLeftRight className="size-3" />
+            Trocar A e B
+          </button>
+        </div>
+
+        <div className="mb-2 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
+          <ChipMandato indice={0} governo={governoA} />
+          <ChipMandato indice={1} governo={governoB} />
+        </div>
+
         <Regua
           selecionados={selecionados}
           aoAlternar={alternarGoverno}
-          maximo={2}
+          rotulos={rotulosDaRegua}
         />
       </div>
 
       {error && <FalhaSerie mensagem={(error as Error).message} />}
 
-      <div className="h-[300px] sm:h-[400px]">
+      <div
+        className={cn(
+          semDadoAlgum ? "min-h-[300px] sm:min-h-[400px]" : "h-[300px] sm:h-[400px]",
+        )}
+      >
         {isPending ? (
           <CarregandoGrafico />
         ) : semDadoAlgum ? (
@@ -309,7 +358,7 @@ function SemDadoComparacao({
   const comDado = alternativas.filter((item): item is Indicador => Boolean(item));
 
   return (
-    <div className="border-border flex h-full flex-col items-center justify-center gap-3 overflow-y-auto rounded-sm border border-dashed px-6 py-6 text-center">
+    <div className="border-border flex flex-col items-center justify-center gap-3 rounded-sm border border-dashed px-5 py-6 text-center">
       <div>
         <p className="text-foreground text-sm">
           Esta série não cobre {nomes.length === 2 ? `${nomes[0]} nem ${nomes[1]}` : nomes[0]}.
@@ -332,7 +381,7 @@ function SemDadoComparacao({
                 onClick={() => aoTrocarIndicador(item.id)}
                 title={item.nome}
                 className={cn(
-                  "border-border-strong text-foreground rounded-sm border px-2 py-1 text-[11px] transition-colors",
+                  "border-border-strong text-foreground min-h-11 rounded-sm border px-2.5 py-1.5 text-[11px] transition-colors sm:min-h-0",
                   "hover:bg-accent focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
                 )}
               >
@@ -359,7 +408,7 @@ function SemDadoComparacao({
                   type="button"
                   onClick={() => aoEscolher(governo.id)}
                   className={cn(
-                    "border-border rounded-sm border px-2 py-1 text-[11px] transition-colors",
+                    "border-border min-h-11 rounded-sm border px-2.5 py-1.5 text-[11px] transition-colors sm:min-h-0",
                     "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
                     ativo
                       ? "bg-foreground text-background border-transparent"
@@ -507,6 +556,30 @@ function ComparacaoLado({
           tracejado.
         </p>
       </div>
+    </div>
+  );
+}
+
+function ChipMandato({ indice, governo }: { indice: number; governo?: Governo }) {
+  return (
+    <div
+      className={cn(
+        "border-border flex min-w-0 items-center gap-1.5 rounded-sm border px-2 py-1.5",
+        "text-[11px]",
+      )}
+    >
+      <AmostraTraco tracejado={indice === 1} />
+      <span className="text-foreground shrink-0 font-mono text-[10px] font-semibold">
+        {indice === 0 ? "A" : "B"}
+      </span>
+      <span className="text-foreground min-w-0 truncate font-medium">
+        {governo?.mandato ?? "—"}
+      </span>
+      {governo && (
+        <span className="text-muted-foreground hidden min-w-0 truncate text-[10px] sm:inline">
+          {governo.presidente}
+        </span>
+      )}
     </div>
   );
 }

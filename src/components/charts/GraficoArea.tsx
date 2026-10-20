@@ -3,6 +3,7 @@ import {
   EChartsAreaChart,
   type ChartConfig,
 } from "@/components/evilcharts/charts/echarts-area-chart";
+import { useMediaQuery, useMovimentoReduzido } from "@/hooks/useMediaQuery";
 import type { SerieGrafico } from "@/lib/grafico";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,9 @@ export function GraficoArea({
   className,
   recuoInferior = 0,
 }: GraficoAreaProps) {
+  const telaAmpla = useMediaQuery("(min-width: 640px)");
+  const movimentoReduzido = useMovimentoReduzido();
+
   const config = useMemo<ChartConfig>(() => {
     return Object.fromEntries(
       series.map((serie, indice) => [
@@ -81,7 +85,7 @@ export function GraficoArea({
         xDataKey={xDataKey}
         stackType={empilhado ? "stacked" : "default"}
         isLoading={carregando}
-        animation
+        animation={!movimentoReduzido}
         enableHoverHighlight={series.length > 1}
         // O escape hatch do evilcharts faz spread raso: passar só `{ grid: {...} }`
         // apagaria top/bottom. Por isso a grade é reescrita inteira, com o
@@ -89,8 +93,8 @@ export function GraficoArea({
         // cortados na borda. Os 42px do topo são a faixa da legenda.
         chartOptions={{
           grid: {
-            left: 44,
-            right: 44,
+            left: telaAmpla ? 44 : 34,
+            right: telaAmpla ? 44 : 10,
             top: 42,
             bottom: 10 + recuoInferior,
           },
