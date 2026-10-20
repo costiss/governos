@@ -94,13 +94,25 @@ para o marcador ter a forma de um traço, casando com o que está no gráfico.
 
 | Componente | Medidas e decisão |
 | --- | --- |
-| **Régua** (`hud/Regua.tsx`) | `flex-grow = meses do mandato`. 44px de altura (touch) ou 132px com colunas de valor. Ativo = invertido. Mandato em curso leva barra de 3px à direita — a régua nunca finge ter terminado |
-| **Segmentado** (`hud/Segmentado.tsx`) | caixa de régua 1px, item ativo invertido; `larguraTotal` divide em partes iguais (usado no header mobile) |
+| **Régua** (`hud/Regua.tsx`) | `flex-grow = meses do mandato`. 48px de altura no celular, 44px no desktop, ou 132px com colunas de valor. Ativo = invertido. Mandato em curso leva barra de 3px à direita — a régua nunca finge ter terminado |
+| **Segmentado** (`hud/Segmentado.tsx`) | caixa de régua 1px, item ativo invertido; `larguraTotal` divide em partes iguais (usado no header desktop) |
 | **TabelaMandatos** (`hud/TabelaMandatos.tsx`) | linha `py-1.5`, número em mono 11px à direita; variação por ▲/▼; "—" para período sem dado |
 | **FichaIndicador** (`hud/FichaIndicador.tsx`) | grade 2 colunas; fonte, código, cobertura, definição e URL crua. Um número sem procedência é uma afirmação sem prova |
 | **MapaBrasil** (`geo/MapaBrasil.tsx`) | coroplético sobre malha do IBGE; rampa de tinta; caixas de chamada para os 7 estados pequenos; sem dado = `--ink-1`, estado próprio — nunca o extremo da escala |
 | **GraficoArea** (`charts/GraficoArea.tsx`) | lazy-loaded (ECharts ~237 KB gzip). Grade reescrita inteira via `chartOptions` porque o escape hatch do evilcharts faz spread raso |
 | **Estados** (`hud/Estados.tsx`) | carregando / falha / vazio, todos na mesma moldura tracejada |
+
+## Mobile
+
+O anuário no celular não é o desktop encolhido. Cinco decisões mudam a estrutura:
+
+- **Navegação no polegar, não no topo.** A barra inferior fixa (56px + `safe-area-inset-bottom`) carrega as três visões; o cabeçalho volta a uma linha de 48px. O item ativo usa a barra de tinta no topo, não preenchimento.
+- **Catálogo em folha, não em coluna.** A lista de 54 indicadores subiria duas telas antes do gráfico. No celular ela vira uma folha inferior (Radix Dialog) com busca sem acento; a coluna lateral fica só a partir de `lg`.
+- **A régua rola; não encolhe.** Largura mínima de 680px preserva a proporção dos mandatos. As bordas esmaecem quando há mais conteúdo, a seleção é trazida para a área visível e o Comparar marca A/B com selos. O par padrão cabe inteiro na tela.
+- **Mapa como sinopse.** No celular saem as caixas de chamada e os valores por estado; os rótulos vão a 30u com halo na cor do fundo (legível sobre qualquer tinta). O valor exato aparece na ficha do estado e na lista, que não tem rolagem aninhada.
+- **Tabela por mandato** mostra só Mandato / Variação / Média no celular; Período, Início, Fim, Mín–máx e Duração voltam a partir de `sm`.
+
+Alvos de toque no mobile: 44px nos filtros e ações, 48px na régua, 44px nas linhas do catálogo e 56px na navegação.
 
 ## Densidade dos números
 

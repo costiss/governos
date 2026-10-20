@@ -193,6 +193,17 @@
   p,
   figure {
     margin: 0;
+    text-wrap: pretty;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  html {
+    scroll-padding-top: 3.5rem;
   }
 
   button {
@@ -265,6 +276,12 @@
     font-size: 19px;
     font-weight: 600;
     fill: var(--foreground);
+    /* Halo na cor do fundo: o rótulo fica legível tanto sobre a tinta clara
+       quanto sobre a escura, nos dois temas. */
+    stroke: var(--background);
+    stroke-width: 2.5px;
+    stroke-linejoin: round;
+    paint-order: stroke fill;
     pointer-events: none;
   }
 
@@ -273,11 +290,52 @@
     font-size: 16px;
     font-weight: 500;
     fill: var(--muted-foreground);
+    stroke: var(--background);
+    stroke-width: 2.5px;
+    stroke-linejoin: round;
+    paint-order: stroke fill;
     pointer-events: none;
+  }
+
+  /* No celular o mapa é uma sinopse. O rótulo precisa de ~10px reais; os
+     valores por estado saem do SVG (a lista ao lado é o alvo preciso) e o
+     contorno dos estados cresce para continuar visível. */
+  @media (max-width: 639px) {
+    .uf-label {
+      font-size: 30px;
+    }
+
+    .uf-sub {
+      display: none;
+    }
+
+    .uf-shape {
+      stroke-width: 0.6;
+    }
+
+    .uf-shape[data-active="true"] {
+      stroke-width: 4;
+    }
   }
 }
 
 @layer utilities {
+  /* Entrada de visão: curta, discreta, nunca um bloqueio. */
+  .view-enter {
+    animation: view-enter 180ms var(--ease-out) both;
+  }
+
+  @keyframes view-enter {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   /* Rolagem silenciosa para painéis densos. */
   .quiet-scroll {
     scrollbar-width: none;

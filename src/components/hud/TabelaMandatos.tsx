@@ -62,17 +62,17 @@ export function TabelaMandatos({
   const maiorMedia = Math.max(...linhas.map((l) => Math.abs(l.media ?? 0)), 0);
 
   return (
-    <div className={cn("quiet-scroll -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0", className)}>
-      <table className="w-full min-w-[560px] border-collapse text-xs">
+    <div className={cn("quiet-scroll -mx-3 overflow-x-auto px-3 sm:mx-0 sm:px-0", className)}>
+      <table className="w-full border-collapse text-xs sm:min-w-[560px]">
         <caption className="sr-only">
           Estatísticas do indicador por mandato presidencial
         </caption>
         <thead>
           <tr className="border-border border-b">
             <Th className="text-left">Mandato</Th>
-            <Th className="text-left">Período</Th>
-            <Th>Início</Th>
-            <Th>Fim</Th>
+            <Th className="hidden text-left sm:table-cell">Período</Th>
+            <Th className="hidden sm:table-cell">Início</Th>
+            <Th className="hidden sm:table-cell">Fim</Th>
             <Th>Variação</Th>
             <Th>Média</Th>
             <Th className="hidden sm:table-cell">Mín — máx</Th>
@@ -89,15 +89,27 @@ export function TabelaMandatos({
               <tr
                 key={linha.governo.id}
                 onClick={interativo ? () => aoAlternar?.(linha.governo.id) : undefined}
+                onKeyDown={
+                  interativo
+                    ? (evento) => {
+                        if (evento.key === "Enter" || evento.key === " ") {
+                          evento.preventDefault();
+                          aoAlternar?.(linha.governo.id);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={interativo ? 0 : undefined}
                 aria-selected={interativo ? ativo : undefined}
                 className={cn(
                   "border-border/60 border-b transition-colors duration-150",
-                  interativo && "cursor-pointer hover:bg-accent",
+                  interativo &&
+                    "cursor-pointer hover:bg-accent focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-inset focus-visible:outline-none",
                   ativo && "bg-accent",
                   vazio && "text-muted-foreground/50",
                 )}
               >
-                <td className="py-1.5 pr-3">
+                <td className="py-3 pr-3 sm:py-1.5">
                   <span className="flex items-center gap-1.5">
                     <span
                       aria-hidden="true"
@@ -109,21 +121,28 @@ export function TabelaMandatos({
                   </span>
                   <span className="text-muted-foreground block text-[10px]">
                     {linha.governo.partido}
+                    <span className="ml-1.5 font-mono tabular-nums sm:hidden" data-num>
+                      {formatarAno(linha.governo.inicio)}–
+                      {linha.governo.fim ? formatarAno(linha.governo.fim) : "hoje"}
+                    </span>
                   </span>
                 </td>
 
-                <td className="text-muted-foreground py-1.5 pr-3 font-mono text-[10px] whitespace-nowrap tabular-nums" data-num>
+                <td
+                  className="text-muted-foreground hidden py-1.5 pr-3 font-mono text-[10px] whitespace-nowrap tabular-nums sm:table-cell"
+                  data-num
+                >
                   {formatarAno(linha.governo.inicio)}–{linha.governo.fim ? formatarAno(linha.governo.fim) : "hoje"}
                 </td>
 
-                <Numero valor={linha.primeiro} unidade={unidade} />
-                <Numero valor={linha.ultimo} unidade={unidade} />
+                <Numero valor={linha.primeiro} unidade={unidade} className="hidden sm:table-cell" />
+                <Numero valor={linha.ultimo} unidade={unidade} className="hidden sm:table-cell" />
 
-                <td className="py-1.5 px-2 text-right">
+                <td className="px-2 py-3 text-right sm:py-1.5">
                   <Variacao valor={linha.variacao} />
                 </td>
 
-                <td className="py-1.5 px-2 text-right">
+                <td className="px-2 py-3 text-right sm:py-1.5">
                   <span className="inline-flex items-center justify-end gap-2">
                     <Barra fracao={maiorMedia > 0 ? Math.abs(linha.media ?? 0) / maiorMedia : 0} />
                     <span className="font-mono text-[11px] tabular-nums" data-num>
@@ -162,7 +181,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
     <th
       scope="col"
       className={cn(
-        "rotulo py-1.5 px-2 font-semibold first:pl-0 last:pr-0",
+        "rotulo py-1.5 px-2 font-semibold whitespace-nowrap first:pl-0 last:pr-0",
         className ?? "text-right",
       )}
     >
@@ -171,9 +190,20 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   );
 }
 
-function Numero({ valor, unidade }: { valor: number | null; unidade: Unidade }) {
+function Numero({
+  valor,
+  unidade,
+  className,
+}: {
+  valor: number | null;
+  unidade: Unidade;
+  className?: string;
+}) {
   return (
-    <td className="py-1.5 px-2 text-right font-mono text-[11px] tabular-nums" data-num>
+    <td
+      className={cn("py-3 px-2 text-right font-mono text-[11px] tabular-nums sm:py-1.5", className)}
+      data-num
+    >
       {valor == null ? <span className="text-muted-foreground/50">—</span> : formatarValor(valor, unidade).numero}
     </td>
   );

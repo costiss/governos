@@ -126,36 +126,40 @@ export function SeletorPeriodo({
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "border-border text-foreground focus-visible:ring-ring flex h-8 items-center gap-1.5 rounded-sm border px-2 text-[11px] transition-colors focus-visible:ring-2 focus-visible:outline-none",
-            ativo ? "bg-accent" : "hover:border-border-strong",
-            className,
-          )}
-          aria-label="Limitar o período"
-        >
-          <CalendarRange className="size-3.5 shrink-0" />
-          <span className="font-mono tabular-nums" data-num>
-            {ativo ? `${atual.deAno} — ${atual.ateAno}` : "Período"}
-          </span>
-          {ativo && (
-            <X
-              className="text-muted-foreground hover:text-foreground size-3 shrink-0"
-              onClick={(evento) => {
-                evento.stopPropagation();
-                aoMudar(null, null);
-              }}
-              aria-label="Limpar o período"
-              role="button"
-              tabIndex={-1}
-            />
-          )}
-        </button>
-      </PopoverTrigger>
+      <div
+        className={cn(
+          "border-border flex h-11 items-stretch overflow-hidden rounded-sm border transition-colors sm:h-8",
+          ativo ? "bg-accent" : "hover:border-border-strong",
+          className,
+        )}
+      >
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "text-foreground focus-visible:ring-ring flex min-w-0 flex-1 items-center gap-1.5 px-2 text-[11px] transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:outline-none",
+            )}
+            aria-label="Limitar o período"
+          >
+            <CalendarRange className="size-3.5 shrink-0" />
+            <span className="truncate font-mono tabular-nums" data-num>
+              {ativo ? `${atual.deAno} — ${atual.ateAno}` : "Período"}
+            </span>
+          </button>
+        </PopoverTrigger>
+        {ativo && (
+          <button
+            type="button"
+            onClick={() => aoMudar(null, null)}
+            aria-label="Limpar o período"
+            className="border-border text-muted-foreground hover:text-foreground focus-visible:ring-ring flex w-10 shrink-0 items-center justify-center border-l transition-colors focus-visible:ring-2 focus-visible:ring-inset focus-visible:outline-none"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+      </div>
 
-      <PopoverContent align="end" className="border-border w-[300px] p-3">
+      <PopoverContent align="end" className="border-border w-[min(300px,calc(100vw-2rem))] p-3">
         <p className="rotulo mb-2">Limitar o período</p>
 
         <div className="space-y-2">
@@ -202,7 +206,7 @@ export function SeletorPeriodo({
                   title={preset.titulo}
                   onClick={() => aoMudar(preset.de, preset.ate)}
                   className={cn(
-                    "border-border rounded-sm border px-2 py-1 text-[11px] transition-colors",
+                    "border-border min-h-11 rounded-sm border px-2.5 py-1 text-[11px] transition-colors sm:min-h-0",
                     "focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none",
                     escolhido
                       ? "bg-foreground text-background border-transparent"
@@ -244,13 +248,14 @@ function Limite({
   aoMudarMes: (mes: number) => void;
 }) {
   const classe =
-    "border-border bg-card text-foreground focus-visible:ring-ring h-7 rounded-sm border px-1.5 font-mono text-[11px] tabular-nums focus-visible:ring-2 focus-visible:outline-none";
+    "border-border bg-card text-foreground focus-visible:ring-ring h-11 rounded-sm border px-1.5 font-mono text-[11px] tabular-nums focus-visible:ring-2 focus-visible:outline-none sm:h-7";
 
   return (
     <div className="flex items-center gap-2">
       <span className="text-muted-foreground w-7 shrink-0 text-[11px]">{rotulo}</span>
       {!anual && (
         <select
+          name={`${rotulo}-mes`}
           value={mes}
           onChange={(evento) => aoMudarMes(Number(evento.target.value))}
           aria-label={`${rotulo} — mês`}
@@ -264,6 +269,7 @@ function Limite({
         </select>
       )}
       <select
+        name={`${rotulo}-ano`}
         value={ano}
         onChange={(evento) => aoMudarAno(Number(evento.target.value))}
         aria-label={`${rotulo} — ano`}

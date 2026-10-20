@@ -1,8 +1,9 @@
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { LegendaRampa, MapaBrasil, type DadoUf } from "@/components/geo/MapaBrasil";
 import { FichaIndicador } from "@/components/hud/FichaIndicador";
 import { useHashRoute } from "@/hooks/useHashRoute";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useEstados } from "@/hooks/useSerie";
 import type { Ponto } from "@/lib/api/types";
 import { formatarValor } from "@/lib/format";
@@ -21,6 +22,10 @@ import { cn } from "@/lib/utils";
 export function MapaView() {
   const { rota, definirParam } = useHashRoute();
   const [ufAtiva, definirUfAtiva] = useState<string | null>(null);
+  // As caixas de chamada dos estados pequenos comem 15% da largura. No celular
+  // isso encolheria o país e os rótulos abaixo do legível — lá a lista ao lado
+  // assume o papel de alvo preciso.
+  const telaAmpla = useMediaQuery("(min-width: 640px)");
 
   const escolhido = indicadorPorId(rota.params.get("i")) ?? INDICADORES_MAPEAVEIS[0];
   const anoDesejado = rota.params.get("ano");
@@ -110,6 +115,24 @@ export function MapaView() {
     };
   }, [ranking, unidade]);
 
+  /**
+   * O estado tocado vira uma ficha curta. No celular o mapa é uma sinopse —
+   * as áreas dos estados pequenos não são alvos confiáveis —, então o valor
+   * exato precisa aparecer em texto, não só num rótulo de 5px.
+   */
+  const detalhe = useMemo(() => {
+    if (!ufAtiva || !unidade) return null;
+    const item = valores[ufAtiva];
+    const posicao = ranking.findIndex((linha) => linha.sigla === ufAtiva);
+    return {
+      sigla: ufAtiva,
+      nome: nomeDaUf(ufAtiva),
+      texto: item?.valor == null ? "—" : formatarValor(item.valor, unidade).completo,
+      ano: item?.ano ?? null,
+      posicao: posicao >= 0 ? posicao + 1 : null,
+    };
+  }, [ufAtiva, valores, ranking, unidade]);
+
   /** Cobertura real do recorte estadual, para a ficha de procedência. */
   const cobertura = useMemo(() => {
     const pontos = Object.values(porUf).flat();
@@ -146,10 +169,11 @@ export function MapaView() {
 
         <div className="flex flex-wrap items-center gap-2">
           <select
+            name="indicador"
             value={escolhido.id}
             onChange={(evento) => definirParam("i", evento.target.value)}
             aria-label="Indicador"
-            className="border-border bg-card text-foreground focus-visible:ring-ring h-8 max-w-[15rem] rounded-sm border px-2 text-[11px] focus-visible:ring-2 focus-visible:outline-none"
+            className="border-border bg-card text-foreground focus-visible:ring-ring h-11 max-w-[15rem] rounded-sm border px-2 text-[11px] focus-visible:ring-2 focus-visible:outline-none sm:h-8"
           >
             {INDICADORES_MAPEAVEIS.map((indicador) => (
               <option key={indicador.id} value={indicador.id}>
@@ -160,10 +184,11 @@ export function MapaView() {
 
           {anos.length > 1 && (
             <select
+              name="ano"
               value={ano}
               onChange={(evento) => definirParam("ano", evento.target.value)}
               aria-label="Ano"
-              className="border-border bg-card text-foreground focus-visible:ring-ring h-8 rounded-sm border px-2 font-mono text-[11px] focus-visible:ring-2 focus-visible:outline-none"
+              className="border-border bg-card text-foreground focus-visible:ring-ring h-11 rounded-sm border px-2 font-mono text-[11px] focus-visible:ring-2 focus-visible:outline-none sm:h-8"
             >
               {anos.map((valor) => (
                 <option key={valor} value={valor}>
@@ -182,19 +207,20 @@ export function MapaView() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <div className="border-border relative rounded-sm border p-3">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,720px)_minmax(280px,1fr)] lg:gap-6">
+        <div className="border-border relative rounded-sm border p-2 sm:p-3">
           {isPending ? (
-            <div className="text-muted-foreground flex h-[420px] items-center justify-center gap-2 text-xs">
+            <div className="text-muted-foreground flex h-[min(92vw,380px)] items-center justify-center gap-2 text-xs sm:h-[520px] lg:h-[560px]">
               <Loader2 className="size-3.5 animate-spin" />
               Lendo a série por UF…
             </div>
           ) : (
-            <div className="h-[420px] sm:h-[520px]">
+            <div className="h-[min(92vw,380px)] sm:h-[520px] lg:h-[560px]">
               <MapaBrasil
                 dados={dadosMapa}
                 ufAtiva={ufAtiva}
                 aoSelecionar={definirUfAtiva}
+                comChamadas={telaAmpla}
                 rotulo={`${escolhido.nome} por unidade da federação em ${ano}`}
               />
             </div>
@@ -208,11 +234,49 @@ export function MapaView() {
               </p>
             </div>
           )}
+          <p className="text-muted-foreground mt-1.5 text-[10px] sm:hidden">
+            {isPending ? "Carregando o recorte estadual…" : "Toque num estado. Os menores estão na lista abaixo."}
+          </p>
         </div>
 
         <aside className="min-w-0">
+          <div className="border-border mb-2 min-h-12 border-b pb-2">
+            {detalhe ? (
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="rotulo">
+                    {detalhe.sigla} · {detalhe.nome}
+                  </p>
+                  <p className="mt-0.5 font-mono text-sm tabular-nums" data-num>
+                    {detalhe.texto}
+                    {detalhe.ano != null && (
+                      <span className="text-muted-foreground ml-1.5 text-[10px]">{detalhe.ano}</span>
+                    )}
+                  </p>
+                  {detalhe.posicao != null && (
+                    <p className="text-muted-foreground text-[10px]">
+                      {detalhe.posicao}º de {ranking.length} unidades
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => definirUfAtiva(null)}
+                  aria-label={`Limpar a seleção de ${detalhe.nome}`}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring flex size-11 shrink-0 items-center justify-center rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-[11px] leading-relaxed">
+                Selecione um estado do mapa — ou uma linha da lista — para ver o valor.
+              </p>
+            )}
+          </div>
+
           <p className="rotulo border-border mb-2 border-b pb-1.5">{rotuloRanking}</p>
-          <ol className="quiet-scroll max-h-[420px] overflow-y-auto sm:max-h-[520px]">
+          <ol className="quiet-scroll sm:max-h-[520px] sm:overflow-y-auto lg:max-h-[560px]">
             {ranking.map((item, indice) => {
               const ativo = ufAtiva === item.sigla;
               const maior = ranking[0].valor;
@@ -224,7 +288,7 @@ export function MapaView() {
                     onClick={() => definirUfAtiva(ativo ? null : item.sigla)}
                     aria-pressed={ativo}
                     className={cn(
-                      "focus-visible:ring-ring flex w-full items-center gap-2 py-1 text-left text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                      "focus-visible:ring-ring flex min-h-11 w-full items-center gap-2 py-2.5 text-left text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none sm:min-h-0 sm:py-1",
                       ativo ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -240,7 +304,7 @@ export function MapaView() {
                         style={{ width: `${Math.max(1, Math.min(100, fracao * 100))}%` }}
                       />
                     </span>
-                    <span className="w-14 shrink-0 text-right font-mono text-[11px] tabular-nums" data-num>
+                    <span className="w-16 shrink-0 text-right font-mono text-[11px] tabular-nums" data-num>
                       {formatarValor(item.valor, escolhido.unidade).numero}
                     </span>
                   </button>

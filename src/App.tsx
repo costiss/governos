@@ -1,5 +1,8 @@
+import { useEffect } from "react";
+import { ArrowLeftRight, ChartLine, Map } from "lucide-react";
 import { AppHeader } from "@/components/hud/AppHeader";
 import { Fronteira } from "@/components/hud/Fronteira";
+import { NavegacaoInferior } from "@/components/hud/NavegacaoInferior";
 import { Segmentado } from "@/components/hud/Segmentado";
 import { useHashRoute } from "@/hooks/useHashRoute";
 import { useTema } from "@/hooks/useTema";
@@ -8,9 +11,9 @@ import { MapaView } from "@/views/MapaView";
 import { OverviewView } from "@/views/OverviewView";
 
 const VISOES = [
-  { valor: "geral", rotulo: "Visão geral", rotuloCurto: "Geral" },
-  { valor: "comparar", rotulo: "Comparar", rotuloCurto: "Comparar" },
-  { valor: "mapa", rotulo: "Mapa", rotuloCurto: "Mapa" },
+  { valor: "geral", rotulo: "Visão geral", rotuloCurto: "Geral", icone: ChartLine },
+  { valor: "comparar", rotulo: "Comparar", rotuloCurto: "Comparar", icone: ArrowLeftRight },
+  { valor: "mapa", rotulo: "Mapa", rotuloCurto: "Mapa", icone: Map },
 ] as const;
 
 type NomeVisao = (typeof VISOES)[number]["valor"];
@@ -23,8 +26,14 @@ export function App() {
     ? (rota.nome as NomeVisao)
     : "geral";
 
+  // Trocar de visão não deve deixar o leitor no meio da tela anterior — o
+  // hash não recarrega o documento, então a rolagem é nossa responsabilidade.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [nome]);
+
   return (
-    <div className="bg-background text-foreground flex min-h-dvh flex-col">
+    <div className="bg-background text-foreground flex min-h-dvh flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
       <AppHeader
         tema={tema}
         aoAlternarTema={alternar}
@@ -41,13 +50,21 @@ export function App() {
 
       <main className="mx-auto w-full max-w-[1440px] flex-1 px-4 py-4 sm:px-6 sm:py-6">
         <Fronteira>
-          {nome === "comparar" && <CompareView />}
-          {nome === "mapa" && <MapaView />}
-          {nome === "geral" && <OverviewView />}
+          <div key={nome} className="view-enter">
+            {nome === "comparar" && <CompareView />}
+            {nome === "mapa" && <MapaView />}
+            {nome === "geral" && <OverviewView />}
+          </div>
         </Fronteira>
       </main>
 
       <Rodape />
+
+      <NavegacaoInferior
+        itens={VISOES}
+        valor={nome}
+        aoMudar={(valor) => ir(valor)}
+      />
     </div>
   );
 }

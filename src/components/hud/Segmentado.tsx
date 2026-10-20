@@ -58,7 +58,7 @@ export function Segmentado<T extends string>({
               "text-muted-foreground hover:text-foreground",
               ativo && "bg-foreground text-background hover:text-background",
               "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:outline-none",
-              compacto ? "px-2.5 py-1 text-[11px]" : "px-3.5 py-1.5 text-xs",
+              compacto ? "min-h-11 px-2.5 py-1 text-[11px] sm:min-h-0" : "min-h-11 px-3.5 py-1.5 text-xs sm:min-h-0",
               "font-medium tracking-[0.02em] whitespace-nowrap",
               larguraTotal && "flex-1",
               indice > 0 && "border-border border-l",
